@@ -47,6 +47,49 @@ else:
 
 logger = logging.getLogger(__name__)
 
+class TargetingKeyGen():
+    def __init__(self):
+        pass
+
+    def get_dfp_targeting(self):
+        assert False
+        return None
+
+    def set_bidder_value(self, bidder_code):
+        assert False
+        return None
+
+    def set_price_value(self, price_str):
+        assert False
+        return None
+
+class PrebidTargetingKeyGen(TargetingKeyGen):
+    def __init__(self):
+
+        super().__init__()
+
+        # Get DFP key IDs for line item targeting.
+        self.hb_bidder_key_id = get_or_create_dfp_targeting_key('hb_bidder')
+        self.hb_pb_key_id = get_or_create_dfp_targeting_key('hb_pb')
+
+        # Instantiate DFP targeting value ID getters for the targeting keys.
+        self.HBBidderValueGetter = DFPValueIdGetter('hb_bidder')
+        self.HBPBValueGetter = DFPValueIdGetter('hb_pb')
+
+        self.hb_bidder_value_id = None
+        self.hb_pb_value_id = None
+
+    def set_bidder_value(self, bidder_code):
+        print("Setting bidder value to {0}".format(bidder_code))
+        self.hb_bidder_value_id = self.HBBidderValueGetter.get_value_id(bidder_code)
+        return self.hb_bidder_value_id
+
+    def set_price_value(self, price_str):
+        self.hb_pb_value_id = self.HBPBValueGetter.get_value_id(price_str)
+        return self.hb_pb_value_id
+
+    def get_dfp_targeting(self):
+        return dfp.create_line_items.prebid_dfp_create_targeting(self.hb_bidder_key_id, self.hb_bidder_value_id, self.hb_pb_key_id, self.hb_pb_value_id)
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
     sizes, bidder_code, prices, num_creatives, currency_code):
@@ -72,18 +115,11 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
       bidder_code, order_name, advertiser_id, num_creatives)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
-  # Get DFP key IDs for line item targeting.
-  hb_bidder_key_id = get_or_create_dfp_targeting_key('hb_bidder')
-  hb_pb_key_id = get_or_create_dfp_targeting_key('hb_pb')
-
-  # Instantiate DFP targeting value ID getters for the targeting keys.
-  HBBidderValueGetter = DFPValueIdGetter('hb_bidder')
-  HBPBValueGetter = DFPValueIdGetter('hb_pb')
-
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
-    placement_ids, bidder_code, sizes, hb_bidder_key_id, hb_pb_key_id,
-    currency_code, HBBidderValueGetter, HBPBValueGetter)
+    placement_ids, bidder_code, sizes, PrebidTargetingKeyGen(),
+    currency_code)
+
   logger.info("Creating line items...")
   line_item_ids = dfp.create_line_items.create_line_items(line_items_config)
 
@@ -143,12 +179,13 @@ class DFPValueIdGetter(object):
     return val_id
 
 
+
 def get_or_create_dfp_targeting_key(name):
   """
   Get or create a custom targeting key by name.
 
   Args:
-    name (str)  
+    name (str)
   Returns:
     an integer: the ID of the targeting key
   """
@@ -158,8 +195,7 @@ def get_or_create_dfp_targeting_key(name):
   return key_id
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, hb_bidder_key_id, hb_pb_key_id, currency_code, HBBidderValueGetter,
-  HBPBValueGetter):
+  sizes, key_gen_obj, currency_code):
   """
   Create a line item config for each price bucket.
 
@@ -168,17 +204,15 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     order_id (int)
     placement_ids (arr)
     bidder_code (str)
-    hb_bidder_key_id (int)
-    hb_pb_key_id (int)
+    sizes (arr)
+    key_gen_obj (obj)
     currency_code (str)
-    HBBidderValueGetter (DFPValueIdGetter)
-    HBPBValueGetter (DFPValueIdGetter)
   Returns:
     an array of objects: the array of DFP line item configurations
   """
 
   # The DFP targeting value ID for this `hb_bidder` code.
-  hb_bidder_value_id = HBBidderValueGetter.get_value_id(bidder_code)
+  key_gen_obj.set_bidder_value(bidder_code)
 
   line_items_config = []
   for price in prices:
@@ -192,7 +226,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     )
 
     # The DFP targeting value ID for this `hb_pb` price value.
-    hb_pb_value_id = HBPBValueGetter.get_value_id(price_str)
+    key_gen_obj.set_price_value(price_str)
 
     config = dfp.create_line_items.create_line_item_config(
       name=line_item_name,
@@ -200,10 +234,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       placement_ids=placement_ids,
       cpm_micro_amount=price,
       sizes=sizes,
-      hb_bidder_key_id=hb_bidder_key_id,
-      hb_pb_key_id=hb_pb_key_id,
-      hb_bidder_value_id=hb_bidder_value_id,
-      hb_pb_value_id=hb_pb_value_id,
+      key_gen_obj=key_gen_obj,
       currency_code=currency_code,
     )
 
@@ -230,7 +261,7 @@ def check_price_buckets_validity(price_buckets):
   except KeyError:
     raise BadSettingException('The setting "PREBID_PRICE_BUCKETS" '
       'must contain keys "precision", "min", "max", and "increment".')
-  
+
   if not (isinstance(pb_precision, int) or isinstance(pb_precision, float)):
     raise BadSettingException('The "precision" key in "PREBID_PRICE_BUCKETS" '
       'must be a number.')
@@ -268,7 +299,7 @@ def main():
   user_email = getattr(settings, 'DFP_USER_EMAIL_ADDRESS', None)
   if user_email is None:
     raise MissingSettingException('DFP_USER_EMAIL_ADDRESS')
-   
+
   advertiser_name = getattr(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
