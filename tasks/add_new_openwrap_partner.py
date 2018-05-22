@@ -72,14 +72,14 @@ class OpenWrapTargetingKeyGen():
         super().__init__()
 
         # Get DFP key IDs for line item targeting.
-        self.pwtpid_key_id = get_or_create_dfp_targeting_key('pwtpid')  # bidder
-        self.pwtbst_key_id = get_or_create_dfp_targeting_key('pwtbst')  # is pwt
-        self.pwtcep_key_id = get_or_create_dfp_targeting_key('pwtecp')  # price
+        self.pwtpid_key_id = get_or_create_dfp_targeting_key('pwtpid', key_type='PREDEFINED')  # bidder
+        self.pwtbst_key_id = get_or_create_dfp_targeting_key('pwtbst', key_type='PREDEFINED')  # is pwt
+        self.pwtcep_key_id = get_or_create_dfp_targeting_key('pwtecp', key_type='FREEFORM') # price
 
         # Instantiate DFP targeting value ID getters for the targeting keys.
         self.BidderValueGetter = DFPValueIdGetter('pwtpid')
-        self.BstValueGetter = DFPValueIdGetter('pwtbst', match_type='PREFIX')
-        self.PriceValueGetter = DFPValueIdGetter('pwtecp')
+        self.BstValueGetter = DFPValueIdGetter('pwtbst')
+        self.PriceValueGetter = DFPValueIdGetter('pwtecp', match_type='PREFIX')
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
         self.bidder_value_id = None
@@ -344,7 +344,7 @@ class DFPValueIdGetter(object):
 
   def _create_value_and_return_id(self, value_name):
     return dfp.create_custom_targeting.create_targeting_value(value_name,
-      self.key_id)
+      self.key_id, match_type=self.match_type)
 
   def get_value_id(self, value_name):
     """
@@ -362,7 +362,7 @@ class DFPValueIdGetter(object):
 
 
 
-def get_or_create_dfp_targeting_key(name):
+def get_or_create_dfp_targeting_key(name, key_type='FREEFORM'):
   """
   Get or create a custom targeting key by name.
 
@@ -373,7 +373,7 @@ def get_or_create_dfp_targeting_key(name):
   """
   key_id = dfp.get_custom_targeting.get_key_id_by_name(name)
   if key_id is None:
-    key_id = dfp.create_custom_targeting.create_targeting_key(name)
+    key_id = dfp.create_custom_targeting.create_targeting_key(name, key_type=key_type)
   return key_id
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
