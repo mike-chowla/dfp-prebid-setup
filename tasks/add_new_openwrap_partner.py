@@ -4,6 +4,7 @@
 import logging
 import os
 import sys
+import csv
 from builtins import input
 from pprint import pprint
 
@@ -26,6 +27,7 @@ from dfp.exceptions import (
 from tasks.price_utils import (
   get_prices_array,
   get_prices_summary_string,
+  num_to_micro_amount,
   micro_amount_to_num,
   num_to_str,
 )
@@ -41,9 +43,10 @@ if 'DISABLE_LOGGING' in os.environ and os.environ['DISABLE_LOGGING'] == 'true':
   logging.getLogger('oauth2client').setLevel(logging.CRITICAL)
 else:
   FORMAT = '%(message)s'
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
+  logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=FORMAT)
   logging.getLogger('googleads').setLevel(logging.ERROR)
   logging.getLogger('oauth2client').setLevel(logging.ERROR)
+  logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +81,7 @@ class OpenWrapTargetingKeyGen():
         self.BstValueGetter = DFPValueIdGetter('pwtbst')
         self.PriceValueGetter = DFPValueIdGetter('pwtecp')
 
-        self.pwtbst_value_id = self.HBBidderValueGetter.get_value_id("1")
+        self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
         self.bidder_value_id = None
         self.price_els = None
 
@@ -88,8 +91,8 @@ class OpenWrapTargetingKeyGen():
         return self.bidder_value_id
 
     def set_price_value(self, price_obj):
-        self.price_els = self.process_price_bucket(price['start'], price['end'], price['granularity'])
-        return price_els
+        self.price_els = self.process_price_bucket(price_obj['start'], price_obj['end'], price_obj['granularity'])
+        return self.price_els
 
     def get_dfp_targeting(self):
 
@@ -102,24 +105,24 @@ class OpenWrapTargetingKeyGen():
         }
 
         # Bidder
-         pwt_bidder_criteria = {
+        pwt_bidder_criteria = {
             'xsi_type': 'CustomCriteria',
             'keyId': self.pwtpid_key_id,
             'valueIds': [self.bidder_value_id ],
             'operator': 'IS'
-          }
+        }
 
         # Generate Ids for all the price elements
         price_value_ids = []
-        for p in price_els:
+        for p in self.price_els:
+            value_id = self.PriceValueGetter.get_value_id(p)
             custom_criteria = {
                 'xsi_type': 'CustomCriteria',
-                'keyId': key_id3,
-                'valueIds': [value_id3],
+                'keyId': self.pwtcep_key_id ,
+                'valueIds': [value_id],
                 'operator': 'IS'
             }
-            value_id = self.PriceValueGetter.get_value_id(p)
-            price_value_ids.append.(value_id)
+            price_value_ids.append(custom_criteria)
 
         price_set = {
             'xsi_type': 'CustomCriteriaSet',
@@ -151,7 +154,6 @@ class OpenWrapTargetingKeyGen():
         r = granu * 100 % 1
         k = start_index
 
-        pdb.set_trace()
         while round(k,2) < round(end_index,2):
 
             logger.debug("k: %f  end_index: %f", k, end_index)
@@ -288,6 +290,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   # Create creatives.
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
       bidder_code, order_name, advertiser_id, num_creatives)
+  creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
@@ -424,14 +427,16 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
     if rate_id == 2:
         return start_rate_range
     else:
-        return round(start_rate_range + end_rate_range / 2.0, 2
+        return round(start_rate_range + end_rate_range / 2.0, 2)
 
 
 def load_price_csv(filename):
     buckets = []
-    with open(filename, 'rb') as csvfile:
-        preader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+    with open(filename, 'r') as csvfile:
+        preader = csv.reader(csvfile)
+        next(preader)  # skip header row
         for row in preader:
+                print(row)
                 order_name = row[0]
                 advertiser = row[1]
                 start_range = float(row[2])
@@ -443,7 +448,7 @@ def load_price_csv(filename):
                     granularity = float(granularity)
                     i = start_range
                     while i < end_range:
-                        a = i + granularity
+                        a = round(i + granularity,2)
                         if a > end_range:
                             a = end_range
 
@@ -451,14 +456,15 @@ def load_price_csv(filename):
                              buckets.append({
                                 'start': i,
                                 'end': a,
-                                'graularity': granularity,
+                                'granularity': granularity,
                                 'rate': get_calculated_rate(i, a, rate_id)
                              })
-            	else:
+                        i = a
+                else:
                      buckets.append({
                         'start': start_range,
                         'end': end_range,
-                        'graularity': 1.0,
+                        'granularity': 1.0,
                         'rate': get_calculated_rate(i, a, rate_id)
                      })
 
@@ -559,11 +565,15 @@ def main():
   if bidder_code is None:
     raise MissingSettingException('PREBID_BIDDER_CODE')
 
-  price_buckets_csv = getattr(settings, 'OPENWRAP_PRICE_CSV', None)
+  price_buckets_csv = getattr(settings, 'OPENWRAP_BUCKET_CSV', None)
   if price_buckets_csv is None:
-    raise MissingSettingException('OPENWRAP_PRICE_CSV')
+    raise MissingSettingException('OPENWRAP_BUCKET_CSV')
 
   prices = load_price_csv(price_buckets_csv)
+
+  prices_summary = []
+  for p in prices:
+      prices_summary.append(p['rate'])
 
   logger.info(
     u"""
