@@ -78,7 +78,7 @@ class OpenWrapTargetingKeyGen():
 
         # Instantiate DFP targeting value ID getters for the targeting keys.
         self.BidderValueGetter = DFPValueIdGetter('pwtpid')
-        self.BstValueGetter = DFPValueIdGetter('pwtbst')
+        self.BstValueGetter = DFPValueIdGetter('pwtbst', match_type='PREFIX')
         self.PriceValueGetter = DFPValueIdGetter('pwtecp')
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
@@ -289,7 +289,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   # Create creatives.
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_code, order_name, advertiser_id, num_creatives)
+      bidder_code, order_name, advertiser_id, num_creatives, creative_file="creative_snippet_openwrap.html")
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
@@ -324,10 +324,15 @@ class DFPValueIdGetter(object):
       key_name (str): the name of the DFP key
     """
     self.key_name = key_name
+    self.match_type = 'EXACT'
+
+    if 'match_type' in kwargs:
+        self.match_type = kwargs['match_type']
+
     self.key_id = dfp.get_custom_targeting.get_key_id_by_name(key_name)
     self.existing_values = dfp.get_custom_targeting.get_targeting_by_key_name(
       key_name)
-    super(DFPValueIdGetter, self).__init__(*args, **kwargs)
+    super(DFPValueIdGetter, self).__init__()
 
   def _get_value_id_from_cache(self, value_name):
     val_id = None

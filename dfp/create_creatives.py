@@ -31,7 +31,7 @@ def create_creatives(creatives):
     logger.info(u'Created creative with name "{name}".'.format(name=creative['name']))
   return created_creative_ids
 
-def create_creative_config(name, advertiser_id):
+def create_creative_config(name, advertiser_id, creative_file=None, safe_frame=False):
   """
   Creates a creative config object.
 
@@ -42,8 +42,11 @@ def create_creative_config(name, advertiser_id):
     an object: the line item config
   """
 
+  if creative_file == None:
+      creative_file = 'creative_snippet.html'
+
   snippet_file_path = os.path.join(os.path.dirname(__file__),
-    'creative_snippet.html')
+    creative_file)
   with open(snippet_file_path, 'r') as snippet_file:
       snippet = snippet_file.read()
 
@@ -58,7 +61,7 @@ def create_creative_config(name, advertiser_id):
     },
     'snippet': snippet,
     # https://github.com/prebid/Prebid.js/issues/418
-    'isSafeFrameCompatible': False,
+    'isSafeFrameCompatible': safe_frame,
   }
 
   return config
@@ -79,7 +82,7 @@ def build_creative_name(bidder_code, order_name, creative_num):
         bidder_code=bidder_code, order_name=order_name, num=creative_num)
 
 def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id,
-  num_creatives=1):
+  num_creatives=1, creative_file=None, safe_frame=False):
   """
   Returns an array of creative config object.
 
@@ -96,7 +99,8 @@ def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id,
     config = create_creative_config(
       name=build_creative_name(bidder_code, order_name, creative_num),
       advertiser_id=advertiser_id,
+      creative_file=creative_file,
+      safe_frame=safe_frame
     )
     creative_configs.append(config)
   return creative_configs
-
