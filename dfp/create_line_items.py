@@ -3,36 +3,6 @@ from googleads import dfp
 
 from dfp.client import get_client
 
-def prebid_dfp_create_targeting(hb_bidder_key_id, hb_bidder_value_id, hb_pb_key_id, hb_pb_value_id):
-  # Create key/value targeting for Prebid.
-  # https://github.com/googleads/googleads-python-lib/blob/master/examples/dfp/v201802/line_item_service/target_custom_criteria.py
-  # create custom criterias
-
-  hb_bidder_criteria = {
-    'xsi_type': 'CustomCriteria',
-    'keyId': hb_bidder_key_id,
-    'valueIds': [hb_bidder_value_id],
-    'operator': 'IS'
-  }
-
-  hb_pb_criteria = {
-    'xsi_type': 'CustomCriteria',
-    'keyId': hb_pb_key_id,
-    'valueIds': [hb_pb_value_id],
-    'operator': 'IS'
-  }
-
-  # The custom criteria will resemble:
-  # (hb_bidder_criteria.key == hb_bidder_criteria.value AND
-  #    hb_pb_criteria.key == hb_pb_criteria.value)
-  top_set = {
-    'xsi_type': 'CustomCriteriaSet',
-    'logicalOperator': 'AND',
-    'children': [hb_bidder_criteria, hb_pb_criteria]
-  }
-
-  return top_set
-
 def create_line_items(line_items):
   """
   Creates line items in DFP.

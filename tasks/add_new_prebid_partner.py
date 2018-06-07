@@ -29,6 +29,11 @@ from tasks.price_utils import (
   micro_amount_to_num,
   num_to_str,
 )
+from tasks.dfp_utils import (
+  TargetingKeyGen,
+  DFPValueIdGetter,
+  get_or_create_dfp_targeting_key
+)
 
 # Colorama for cross-platform support for colored logging.
 # https://github.com/kmjennison/dfp-prebid-setup/issues/9
@@ -46,22 +51,6 @@ else:
   logging.getLogger('oauth2client').setLevel(logging.ERROR)
 
 logger = logging.getLogger(__name__)
-
-class TargetingKeyGen():
-    def __init__(self):
-        pass
-
-    def get_dfp_targeting(self):
-        assert False
-        return None
-
-    def set_bidder_value(self, bidder_code):
-        assert False
-        return None
-
-    def set_price_value(self, price_str):
-        assert False
-        return None
 
 class PrebidTargetingKeyGen(TargetingKeyGen):
     def __init__(self):
@@ -89,7 +78,34 @@ class PrebidTargetingKeyGen(TargetingKeyGen):
         return self.hb_pb_value_id
 
     def get_dfp_targeting(self):
-        return dfp.create_line_items.prebid_dfp_create_targeting(self.hb_bidder_key_id, self.hb_bidder_value_id, self.hb_pb_key_id, self.hb_pb_value_id)
+      # Create key/value targeting for Prebid.
+      # https://github.com/googleads/googleads-python-lib/blob/master/examples/dfp/v201802/line_item_service/target_custom_criteria.py
+      # create custom criterias
+
+      hb_bidder_criteria = {
+        'xsi_type': 'CustomCriteria',
+        'keyId': self.hb_bidder_key_id,
+        'valueIds': [self.hb_bidder_value_id],
+        'operator': 'IS'
+      }
+
+      hb_pb_criteria = {
+        'xsi_type': 'CustomCriteria',
+        'keyId': self.hb_pb_key_id,
+        'valueIds': [self.hb_pb_value_id],
+        'operator': 'IS'
+      }
+
+      # The custom criteria will resemble:
+      # (hb_bidder_criteria.key == hb_bidder_criteria.value AND
+      #    hb_pb_criteria.key == hb_pb_criteria.value)
+      top_set = {
+        'xsi_type': 'CustomCriteriaSet',
+        'logicalOperator': 'AND',
+        'children': [hb_bidder_criteria, hb_pb_criteria]
+      }
+
+      return top_set
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
     sizes, bidder_code, prices, num_creatives, currency_code):
@@ -135,64 +151,6 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
     Happy bidding!
 
   """)
-
-class DFPValueIdGetter(object):
-  """
-  A class to bulk fetch DFP values by key and then create new values as needed.
-  """
-
-  def __init__(self, key_name, *args, **kwargs):
-    """
-    Args:
-      key_name (str): the name of the DFP key
-    """
-    self.key_name = key_name
-    self.key_id = dfp.get_custom_targeting.get_key_id_by_name(key_name)
-    self.existing_values = dfp.get_custom_targeting.get_targeting_by_key_name(
-      key_name)
-    super(DFPValueIdGetter, self).__init__(*args, **kwargs)
-
-  def _get_value_id_from_cache(self, value_name):
-    val_id = None
-    for value_obj in self.existing_values:
-      if value_obj['name'] == value_name:
-        val_id = value_obj['id']
-        break
-    return val_id
-
-  def _create_value_and_return_id(self, value_name):
-    return dfp.create_custom_targeting.create_targeting_value(value_name,
-      self.key_id)
-
-  def get_value_id(self, value_name):
-    """
-    Get the DFP custom value ID, or create it if it doesn't exist.
-
-    Args:
-      value_name (str): the name of the DFP value
-    Returns:
-      an integer: the ID of the DFP value
-    """
-    val_id = self._get_value_id_from_cache(value_name)
-    if not val_id:
-      val_id = self._create_value_and_return_id(value_name)
-    return val_id
-
-
-
-def get_or_create_dfp_targeting_key(name):
-  """
-  Get or create a custom targeting key by name.
-
-  Args:
-    name (str)
-  Returns:
-    an integer: the ID of the targeting key
-  """
-  key_id = dfp.get_custom_targeting.get_key_id_by_name(name)
-  if key_id is None:
-    key_id = dfp.create_custom_targeting.create_targeting_key(name)
-  return key_id
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   sizes, key_gen_obj, currency_code):
