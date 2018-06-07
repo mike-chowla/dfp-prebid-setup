@@ -363,7 +363,9 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   # Create creatives.
   bidder_str = bidder_code
-  if isinstance(bidder_str, (list, tuple)):
+  if bidder_str == None:
+      bidder_str = "All"
+  elif isinstance(bidder_str, (list, tuple)):
       bidder_str = "_".join(bidder_str)
 
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
@@ -489,7 +491,9 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
         price_str = price_str[0:-1]
 
     bidder_str = bidder_code
-    if isinstance(bidder_str, (list, tuple)):
+    if bidder_str == None:
+        bidder_str = "All"
+    elif isinstance(bidder_str, (list, tuple)):
         bidder_str = "_".join(bidder_str)
 
     # Autogenerate the line item name.
