@@ -6,6 +6,7 @@ import os
 import sys
 import csv
 import pprint
+import re
 from builtins import input
 
 from colorama import init
@@ -481,7 +482,11 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   line_items_config = []
   for price in prices:
 
-    price_str = num_to_str(price['rate'])
+    price_str = num_to_str(price['rate'], precision=3)
+
+    # Remove trailing zero if exists
+    if re.match("\d+\.\d{2}0",price_str):
+        price_str = price_str[0:-1]
 
     bidder_str = bidder_code
     if isinstance(bidder_str, (list, tuple)):
@@ -518,7 +523,7 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
     if rate_id == 2:
         return start_rate_range
     else:
-        return round(start_rate_range + end_rate_range / 2.0, 2)
+        return round(start_rate_range + end_rate_range / 2.0, 3)
 
 
 def load_price_csv(filename):
