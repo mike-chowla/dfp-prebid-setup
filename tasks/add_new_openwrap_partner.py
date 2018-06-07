@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 import csv
+import pprint
 from builtins import input
-from pprint import pprint
 
 from colorama import init
 
@@ -82,13 +82,85 @@ class OpenWrapTargetingKeyGen():
         self.PriceValueGetter = DFPValueIdGetter('pwtecp', match_type='PREFIX')
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
-        self.bidder_value_id = None
+        self.bidder_criteria = None
         self.price_els = None
+
+        self.get_custom_targeting = []
 
     def set_bidder_value(self, bidder_code):
         print("Setting bidder value to {0}".format(bidder_code))
-        self.bidder_value_id = self.BidderValueGetter.get_value_id(bidder_code)
-        return self.bidder_value_id
+
+        if bidder_code == None:
+            self.bidder_criteria = None
+            return
+
+        if isinstance(bidder_code, (list, tuple)):
+            # Multiple biders for us to OR to other
+            bidder_criteria = []
+            for bc in bidder_code:
+                value_id = self.BidderValueGetter.get_value_id(bc)
+                custom_criteria = {
+                    'xsi_type': 'CustomCriteria',
+                    'keyId': self.pwtpid_key_id,
+                    'valueIds': [value_id],
+                    'operator': 'IS'
+                }
+                bidder_criteria.append(custom_criteria)
+
+            self.bidder_criteria = {
+                'xsi_type': 'CustomCriteriaSet',
+                'logicalOperator': 'OR',
+                'children': bidder_criteria
+            }
+        else:
+            self.bidder_criteria  = {
+                'xsi_type': 'CustomCriteria',
+                'keyId': self.pwtpid_key_id,
+                'valueIds': [self.BidderValueGetter.get_value_id(bidder_code) ],
+                'operator': 'IS'
+            }
+
+    def set_custom_targeting(self, custom_targeting):
+        self.custom_targeting = []
+
+        if custom_targeting == None:
+            return
+
+        for cc in custom_targeting:
+            key_id = get_or_create_dfp_targeting_key(cc[0], key_type='FREEFORM')
+            value_getter = DFPValueIdGetter(cc[0])
+            one_custom_criteria = None
+
+            if isinstance(cc[2], (list, tuple)):
+                value_criterias = []
+                for val in cc[2]:
+                    value_id = value_getter.get_value_id(val)
+                    criteria = {
+                        'xsi_type': 'CustomCriteria',
+                        'keyId': key_id,
+                        'valueIds': [value_id],
+                        'operator': cc[1]
+                    }
+                    value_criterias.append(criteria)
+
+                operator = 'OR'
+                if cc[1] == 'IS_NOT':
+                    operator = 'AND'
+
+                one_custom_criteria = {
+                    'xsi_type': 'CustomCriteriaSet',
+                    'logicalOperator': operator,
+                    'children': value_criterias
+                }
+            else:
+                one_custom_criteria  = {
+                    'xsi_type': 'CustomCriteria',
+                    'keyId': key_id,
+                    'valueIds': [value_getter.get_value_id(cc[2]) ],
+                    'operator': cc[1]
+                }
+
+            self.custom_targeting.append(one_custom_criteria)
 
     def set_price_value(self, price_obj):
         self.price_els = self.process_price_bucket(price_obj['start'], price_obj['end'], price_obj['granularity'])
@@ -101,14 +173,6 @@ class OpenWrapTargetingKeyGen():
             'xsi_type': 'CustomCriteria',
             'keyId': self.pwtbst_key_id,
             'valueIds': [self.pwtbst_value_id ],
-            'operator': 'IS'
-        }
-
-        # Bidder
-        pwt_bidder_criteria = {
-            'xsi_type': 'CustomCriteria',
-            'keyId': self.pwtpid_key_id,
-            'valueIds': [self.bidder_value_id ],
             'operator': 'IS'
         }
 
@@ -133,8 +197,17 @@ class OpenWrapTargetingKeyGen():
         top_set = {
             'xsi_type': 'CustomCriteriaSet',
             'logicalOperator': 'AND',
-            'children': [pwt_bst_criteria, pwt_bidder_criteria, price_set]
+            'children': [pwt_bst_criteria]
         }
+
+        if self.bidder_criteria:
+            top_set['children'].append(self.bidder_criteria)
+
+        top_set['children'].append(price_set)
+
+        if len(self.custom_targeting) > 0:
+            #top_set['children'].append(self.custom_targeting[0])
+            top_set['children'].extend(self.custom_targeting)
 
         return top_set
 
@@ -269,7 +342,7 @@ class OpenWrapTargetingKeyGen():
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
-    sizes, bidder_code, prices, num_creatives, currency_code):
+    sizes, bidder_code, prices, num_creatives, currency_code, custom_targeting):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -288,16 +361,22 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   order_id = dfp.create_orders.create_order(order_name, advertiser_id, user_id)
 
   # Create creatives.
+  bidder_str = bidder_code
+  if isinstance(bidder_str, (list, tuple)):
+      bidder_str = "_".join(bidder_str)
+
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_code, order_name, advertiser_id, num_creatives, creative_file="creative_snippet_openwrap.html")
+      bidder_str, order_name, advertiser_id, num_creatives, creative_file="creative_snippet_openwrap.html")
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
-    currency_code)
+    currency_code, custom_targeting)
 
   logger.info("Creating line items...")
+  #pp = pprint.PrettyPrinter(indent=4)
+  #pp.pprint(line_items_config)
   line_item_ids = dfp.create_line_items.create_line_items(line_items_config)
 
   # Associate creatives with line items.
@@ -377,7 +456,7 @@ def get_or_create_dfp_targeting_key(name, key_type='FREEFORM'):
   return key_id
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, currency_code):
+  sizes, key_gen_obj, currency_code, custom_targeting):
   """
   Create a line item config for each price bucket.
 
@@ -385,10 +464,11 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     prices (array)
     order_id (int)
     placement_ids (arr)
-    bidder_code (str)
+    bidder_code (str or arr)
     sizes (arr)
     key_gen_obj (obj)
     currency_code (str)
+    custom_targeting (arr)
   Returns:
     an array of objects: the array of DFP line item configurations
   """
@@ -396,14 +476,20 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   # The DFP targeting value ID for this `hb_bidder` code.
   key_gen_obj.set_bidder_value(bidder_code)
 
+  key_gen_obj.set_custom_targeting(custom_targeting)
+
   line_items_config = []
   for price in prices:
 
     price_str = num_to_str(price['rate'])
 
+    bidder_str = bidder_code
+    if isinstance(bidder_str, (list, tuple)):
+        bidder_str = "_".join(bidder_str)
+
     # Autogenerate the line item name.
     line_item_name = u'{bidder_code}: OW ${price}'.format(
-      bidder_code=bidder_code,
+      bidder_code=bidder_str,
       price=price_str
     )
 
@@ -567,8 +653,23 @@ def main():
   )
 
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
-  if bidder_code is None:
-    raise MissingSettingException('PREBID_BIDDER_CODE')
+  if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
+    raise BadSettingException('PREBID_BIDDER_CODE')
+
+  custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
+  if custom_targeting != None:
+      if not isinstance(custom_targeting, (list, tuple)):
+          raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
+
+      for ct in custom_targeting:
+         if len(ct) != 3:
+             raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
+
+         if ct[1] != "IS" and ct[1] != "IS_NOT":
+             raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
+
+         if not isinstance(ct[2], (list, tuple, str)):
+             raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
 
   price_buckets_csv = getattr(settings, 'OPENWRAP_BUCKET_CSV', None)
   if price_buckets_csv is None:
@@ -591,7 +692,7 @@ def main():
       {name_start_format}hb_pb{format_end} = {value_start_format}{prices_summary}{format_end}
       {name_start_format}hb_bidder{format_end} = {value_start_format}{bidder_code}{format_end}
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
-
+      {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
     """.format(
       num_line_items = len(prices),
       order_name=order_name,
@@ -601,6 +702,7 @@ def main():
       bidder_code=bidder_code,
       placements=placements,
       sizes=sizes,
+      custom_targeting=custom_targeting,
       name_start_format=color.BOLD,
       format_end=color.END,
       value_start_format=color.BLUE,
@@ -622,7 +724,9 @@ def main():
     prices,
     num_creatives,
     currency_code,
+    custom_targeting
   )
+
 
 if __name__ == '__main__':
   main()
