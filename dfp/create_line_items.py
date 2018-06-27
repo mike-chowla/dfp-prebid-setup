@@ -23,7 +23,7 @@ def create_line_items(line_items):
   return created_line_item_ids
 
 def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
-  sizes, key_gen_obj, currency_code='USD'):
+  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None):
   """
   Creates a line item config object.
 
@@ -58,9 +58,7 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
     'orderId': order_id,
     # https://developers.google.com/doubleclick-publishers/docs/reference/v201802/LineItemService.Targeting
     'targeting': {
-      'inventoryTargeting': {
-        'targetedPlacementIds': placement_ids
-      },
+      'inventoryTargeting': None,
       'customTargeting': top_set,
     },
     'startDateTimeType': 'IMMEDIATELY',
@@ -77,4 +75,13 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
     },
     'creativePlaceholders': creative_placeholders,
   }
+
+  if placement_ids and len(placement_ids) > 0:
+      line_item_config['targeting']['inventoryTargeting'] = { 'targetedPlacementIds': placement_ids }
+  else:
+      ad_unit_targeting = []
+      for a in ad_unit_ids:
+          ad_unit_targeting.append({"adUnitId": a, "includeDescendants": True })
+      line_item_config['targeting']['inventoryTargeting'] = { 'targetedAdUnits': ad_unit_targeting }
+
   return line_item_config

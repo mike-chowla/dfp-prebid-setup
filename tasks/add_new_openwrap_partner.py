@@ -21,6 +21,7 @@ import dfp.get_advertisers
 import dfp.get_custom_targeting
 import dfp.get_placements
 import dfp.get_users
+import dfp.get_root_ad_unit_id
 from dfp.exceptions import (
   BadSettingException,
   MissingSettingException
@@ -341,7 +342,14 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   user_id = dfp.get_users.get_user_id_by_email(user_email)
 
   # Get the placement IDs.
-  placement_ids = dfp.get_placements.get_placement_ids_by_name(placements)
+  placement_ids = None
+  ad_unit_ids = None
+  if len(placements) > 0:
+      placement_ids = dfp.get_placements.get_placement_ids_by_name(placements)
+  else:
+      # Run of network
+      root_id = dfp.get_root_ad_unit_id.get_root_ad_unit_id()
+      ad_unit_ids = [ root_id ]
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
@@ -364,7 +372,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
-    currency_code, custom_targeting)
+    currency_code, custom_targeting, ad_unit_ids=ad_unit_ids)
 
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
@@ -385,7 +393,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   """)
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, currency_code, custom_targeting):
+  sizes, key_gen_obj, currency_code, custom_targeting, ad_unit_ids=None):
   """
   Create a line item config for each price bucket.
 
@@ -439,6 +447,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       sizes=sizes,
       key_gen_obj=key_gen_obj,
       currency_code=currency_code,
+      ad_unit_ids=ad_unit_ids
     )
 
     line_items_config.append(config)
@@ -453,7 +462,7 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
     if rate_id == 2:
         return start_rate_range
     else:
-        return round(start_rate_range + end_rate_range / 2.0, 3)
+        return round((start_rate_range + end_rate_range) / 2.0, 3)
 
 
 def load_price_csv(filename):
@@ -526,12 +535,16 @@ def main():
   if order_name is None:
     raise MissingSettingException('DFP_ORDER_NAME')
 
+  num_placements = 0
   placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
   if placements is None:
-    raise MissingSettingException('DFP_TARGETED_PLACEMENT_NAMES')
-  elif len(placements) < 1:
-    raise BadSettingException('The setting "DFP_TARGETED_PLACEMENT_NAMES" '
-      'must contain at least one DFP placement ID.')
+    placements = []
+
+  # if no placements are specified, we wil do run of network which is
+  #   effectively one placement
+  num_placements = len(placements)
+  if num_placements == 0:
+      num_placements = 1
 
   sizes = getattr(settings, 'DFP_PLACEMENT_SIZES', None)
   if sizes is None:
@@ -547,7 +560,7 @@ def main():
   # https://github.com/kmjennison/dfp-prebid-setup/issues/13
   num_creatives = (
     getattr(settings, 'DFP_NUM_CREATIVES_PER_LINE_ITEM', None) or
-    len(placements)
+    num_placements
   )
 
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
