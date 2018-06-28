@@ -19,6 +19,7 @@ DFP_USER_EMAIL_ADDRESS = None
 DFP_ADVERTISER_NAME = None
 
 # Names of placements the line items should target.
+#  Leave empty for Run of Network (requires Network permission)
 DFP_TARGETED_PLACEMENT_NAMES = []
 
 # Sizes of placements. These are used to set line item and creative sizes.
@@ -37,13 +38,13 @@ DFP_PLACEMENT_SIZES = [
 # If False, the program will exit rather than create an advertiser.
 DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST = False
 
-# If settings.DFP_ORDER_NAME is the same as an existing order, add the created 
+# If settings.DFP_ORDER_NAME is the same as an existing order, add the created
 # line items to that order. If False, the program will exit rather than
 # modify an existing order.
 DFP_USE_EXISTING_ORDER_IF_EXISTS = False
 
 # Optional
-# Each line item should have at least as many creatives as the number of 
+# Each line item should have at least as many creatives as the number of
 # ad units you serve on a single page because DFP specifies:
 #   "Each of a line item's assigned creatives can only serve once per page,
 #    so if you want the same creative to appear more than once per page,
@@ -62,6 +63,11 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = False
 # PREBID SETTINGS
 #########################################################################
 
+# OpenWrap: you can specify an array to target multiple bidders
+#  with one line item
+# PREBID_BIDDER_CODE = ["pubmatic", "conversant"]
+#
+# Prebid line item generator only accepts a single value
 PREBID_BIDDER_CODE = None
 
 # Price buckets. This should match your Prebid settings for the partner. See:
@@ -74,6 +80,17 @@ PREBID_PRICE_BUCKETS = {
   'max' : 20,
   'increment': 0.10,
 }
+
+# OpenWrap: Buckets are specified in a CSV fileself
+#   Same file format as the PubMatic Line Item tool
+#OPENWRAP_BUCKET_CSV = 'TestLineItems.csv'
+
+# OpenWrap: Set custom line item targeting values
+#OPENWRAP_CUSTOM_TARGETING = [
+#    ("a", "IS", ("1", "2", "3")),
+#    ("b", "IS_NOT", ("4", "5", "6")),
+#]
+
 
 #########################################################################
 
