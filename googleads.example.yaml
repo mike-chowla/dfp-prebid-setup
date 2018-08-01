@@ -1,9 +1,17 @@
 
 # From: https://github.com/googleads/googleads-python-lib/blob/master/googleads.yaml
 dfp:
-  #############################################################################
-  # Required Fields                                                           #
-  #############################################################################
   application_name: INSERT_APPLICATION_NAME_HERE
+
+  #############################################################################
+  # Option 1: OAuth Service Account                                           #
+  #############################################################################
   network_code: INSERT_NETWORK_CODE_HERE
   path_to_private_key_file: ./key.json
+
+  #############################################################################
+  # Option 2: OAuth Web Authorization / Refresh Token                         #
+  #############################################################################
+  # client_id: INSERT_CLIENT_ID_HERE
+  # client_secret: INSERT CLIENT_SECRET_HERE
+  # refresh_token: INSERT_REFRESH_TOKEN_HERE
