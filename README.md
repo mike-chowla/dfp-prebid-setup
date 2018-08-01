@@ -12,23 +12,35 @@ While this tool covers typical use cases, it might not fit your needs. Check out
 
 ## Getting Started
 
-### Creating Google Credentials
-_You will need credentials to access your DFP account programmatically. This summarizes steps from [DFP docs](https://developers.google.com/doubleclick-publishers/docs/authentication) and the DFP Python libary [auth guide](https://github.com/googleads/googleads-python-lib)._
+### Authentication
+_You will need credentials to access your DFP account programmatically. This summarizes steps from [DFP docs](https://developers.google.com/doubleclick-publishers/docs/authentication) and the DFP Python library [auth guide](https://github.com/googleads/googleads-python-lib)._
 
 1. If you haven't yet, sign up for a [DFP account](https://www.doubleclickbygoogle.com/solutions/revenue-management/dfp/).
+
+#### Option 1: Google Service Account Credentials
 2. Create Google developer credentials
    * Go to the [Google Developers Console Credentials page](https://console.developers.google.com/apis/credentials).
    * On the **Credentials** page, select **Create credentials**, then select **Service account key**.
    * Select **New service account**, and select JSON key type. You can leave the role blank.
    * Click **Create** to download a file containing a `.json` private key.
+
+#### Option 2: OAuth2 Refresh token
+2. Create Google developer credentials
+   * Go to the [Google Developers Console Credentials page](https://console.developers.google.com/apis/credentials).
+   * On the **Credentials** page, select **Create credentials**, then select **OAuth client ID**.
+   * Click **Configure Consent Screen**, add a **Product name shown to users** and save
+   * Select Application Type **Web application**
+   * Under restrictions, for both Authorized Javascript origins and Auothrized redirect URIs, enter **http://localhost:8080**
+   * Click **Create**.  Copy and save your **Client ID** and **Client secret**
+
 3. Enable API access to DFP
    * Sign into your [DFP account](https://www.google.com/dfp/). You must have admin rights.
    * In the **Admin** section, select **Global settings**
    * Ensure that **API access** is enabled.
    * Click the **Add a service account user** button.
-     * Use the service account email for the Google developer credentials you created above.
-     * Set the role to "Trafficker".
-     * Click **Save**.
+      * Use the service account email for the Google developer credentials you created above.
+      * Set the role to "Trafficker".
+      * Click **Save**.
 
 ### Setting Up
 1. Clone this repository.
@@ -36,9 +48,11 @@ _You will need credentials to access your DFP account programmatically. This sum
 3. Rename key
    * Rename the Google credentials key you previously downloaded (`[something].json`) to `key.json` and move it to the root of this repository
 4. Make a copy of `googleads.example.yaml` and name it `googleads.yaml`.
+5. If using OAuth2 Refresh token, run `get_oauth2_token.py` and copy the refresh token
 5. In `googleads.yaml`, set the required fields:
    * `application_name` is the name of the Google project you created when creating the service account credentials. It should appear in the top-left of the [credentials page](https://console.developers.google.com/apis/credentials).
    * `network_code` is your DFP network number; e.g., for `https://www.google.com/dfp/12398712#delivery`, the network code is `12398712`.
+   * If using OAuth2 refresh token, comment out `path_to_private_key_file` and set `client_id`, `client_secret` and `refresh_token`
 
 ### Verifying Setup
 Let's try it out! From the top level directory, run
@@ -47,7 +61,7 @@ Let's try it out! From the top level directory, run
 
 and you should see all of the orders in your DFP account.
 
-## Creating Line Items
+## Creating Line Items - Prebid.js
 
 Modify the following settings in `settings.py`:
 
@@ -69,6 +83,29 @@ You should be all set! Review your order, line items, and creatives to make sure
 
 *Note: DFP might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
 
+## Creating Line Items - OpenWrap
+
+Modify the following settings in `settings.py`:
+
+Setting | Description | Type
+------------ | ------------- | -------------
+`DFP_ORDER_NAME` | What you want to call your new DFP order | string
+`DFP_USER_EMAIL_ADDRESS` | The email of the DFP user who will be the trafficker for the created order | string
+`DFP_ADVERTISER_NAME` | The name of the DFP advertiser for the created order | string
+`DFP_TARGETED_PLACEMENT_NAMES` | The names of DFP placements the line items should target.  Use empty array for `Run Of Network` | array of strings
+`DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
+`PREBID_BIDDER_CODE` | The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner.  Set to `None` to generate line items for all partners.  Use array of strings if the line should match multiple partners | string or array of strings.
+`OPENWRAP_BUCKET_CSV` | CSV that that list buckets and price granularity; used to set `pwtecp` targeting for each line item | string
+
+Then, from the root of the repository, run:
+
+`python -m tasks.add_new_openwrap_partner`
+
+You should be all set! Review your order, line items, and creatives to make sure they are correct. Then, approve the order in DFP.
+
+*Note: DFP might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
+
+
 ## Additional Settings
 
 In most cases, you won't need to modify these settings.
@@ -79,6 +116,7 @@ Setting | Description | Default
 `DFP_USE_EXISTING_ORDER_IF_EXISTS` | Whether we should modify an existing order if one already exists with name `DFP_ORDER_NAME` | `False`
 `DFP_NUM_CREATIVES_PER_LINE_ITEM` | The number of duplicate creatives to attach to each line item. Due to [DFP limitations](https://support.google.com/dfp_sb/answer/82245?hl=en), this should be equal to or greater than the number of ad units you serve on a given page. | the length of setting `DFP_TARGETED_PLACEMENT_NAMES`
 `DFP_CURRENCY_CODE` | The currency to use in line items. | `'USD'`
+`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item.  OpenWrap only | array of arrays
 
 ## Limitations
 
@@ -88,4 +126,3 @@ Setting | Description | Default
 * This tool does not modify existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it.
 
 Please consider [contributing](CONTRIBUTING.md) to make the tool more flexible.
-
