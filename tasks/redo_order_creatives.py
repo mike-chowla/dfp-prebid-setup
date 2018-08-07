@@ -62,7 +62,7 @@ def redo_creatives(user_email, advertiser_name, order_name,
   line_items = dfp.get_line_items.get_line_items_for_order(order.id)
 
   # Remove Existing LICAs
-  logger.info("-- Removing existing cretive associatings")
+  logger.info("-- Removing existing cretive associations")
   for li in line_items:
       n = dfp.remove_creatives_from_line_items.remove_licas(li.id)
       logger.info("Line Item {0} - Removed {1} licas".format(li.name, n))
@@ -81,8 +81,9 @@ def redo_creatives(user_email, advertiser_name, order_name,
   # Associate creatives with line items.
   line_item_ids = []
   for li in line_items:
-      line_item_ids.append(li.id)
-      
+      if not li.isArchived:
+          line_item_ids.append(li.id)
+
   dfp.associate_line_items_and_creatives.make_licas(line_item_ids,
     creative_ids, size_overrides=sizes)
 
