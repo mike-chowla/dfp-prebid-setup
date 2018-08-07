@@ -38,13 +38,14 @@ def remove_licas(line_item_id):
         print ('LICA with line item id "%s", creative id "%s", and status'
                ' "%s" will be deactivated.' %
                (lica['lineItemId'], lica['creativeId'], lica['status']))
-        result = lica_service.performLineItemCreativeAssociationAction(
-          {'xsi_type': 'DeactivateLineItemCreativeAssociations'},
-          statement.ToStatement())
 
-        if result and int(result['numChanges']) > 0:
-          num_deactivated_licas += int(result['numChanges'])
-        statement.offset += statement.limit
+      result = lica_service.performLineItemCreativeAssociationAction(
+        {'xsi_type': 'DeactivateLineItemCreativeAssociations'},
+        statement.ToStatement())
+
+      if result and int(result['numChanges']) > 0:
+        num_deactivated_licas += int(result['numChanges'])
+      statement.offset += statement.limit
     else:
       break
 
