@@ -66,16 +66,19 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         self.pwtpid_key_id = get_or_create_dfp_targeting_key('pwtpid', key_type='PREDEFINED')  # bidder
         self.pwtbst_key_id = get_or_create_dfp_targeting_key('pwtbst', key_type='PREDEFINED')  # is pwt
         self.pwtcep_key_id = get_or_create_dfp_targeting_key('pwtecp', key_type='FREEFORM') # price
+        self.pwtplt_key_id = get_or_create_dfp_targeting_key('pwtplt', key_type='PREDEFINED') # platform
 
         # Instantiate DFP targeting value ID getters for the targeting keys.
         self.BidderValueGetter = DFPValueIdGetter('pwtpid')
         self.BstValueGetter = DFPValueIdGetter('pwtbst')
         self.PriceValueGetter = DFPValueIdGetter('pwtecp', match_type='PREFIX')
+        self.PltValueGetter = DFPValueIdGetter('pwtplt')
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
         self.bidder_criteria = None
         self.price_els = None
 
+        self.creative_type = None
         self.get_custom_targeting = []
 
     def set_bidder_value(self, bidder_code):
@@ -110,6 +113,9 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                 'valueIds': [self.BidderValueGetter.get_value_id(bidder_code) ],
                 'operator': 'IS'
             }
+
+    def set_creative_type(self, ct):
+        self.creative_type = ct
 
     def set_custom_targeting(self, custom_targeting):
         self.custom_targeting = []
@@ -190,6 +196,16 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
             'logicalOperator': 'AND',
             'children': [pwt_bst_criteria]
         }
+
+        if self.creative_type == "AMP":
+            amp_value_id = self.PltValueGetter.get_value_id("amp")
+            platform_criteria = {
+                'xsi_type': 'CustomCriteria',
+                'keyId': self.pwtplt_key_id,
+                'valueIds': [amp_value_id],
+                'operator': 'IS'
+            }
+            top_set['children'].append(platform_criteria)
 
         if self.bidder_criteria:
             top_set['children'].append(self.bidder_criteria)
@@ -333,7 +349,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
-    sizes, bidder_code, prices, num_creatives, currency_code, custom_targeting):
+    sizes, bidder_code, prices, creative_type, num_creatives, currency_code, custom_targeting):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -365,14 +381,26 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   elif isinstance(bidder_str, (list, tuple)):
       bidder_str = "_".join(bidder_str)
 
+  creative_file = "creative_snippet_openwrap.html"
+  use_safe_frame = False
+  if creative_type == "WEB":
+    creative_file = "creative_snippet_openwrap.html"
+  elif creative_type == "WEB_SAFEFRAME":
+    creative_file = "creative_snippet_openwrap_sf.html"
+    use_safe_frame = True
+  elif creative_type == "AMP":
+    creative_file = "creative_snippet_openwrap_amp.html"
+  elif creative_type == "IN_APP":
+    creative_file = "creative_snippet_openwrap_in_app.html"
+
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_str, order_name, advertiser_id, num_creatives, creative_file="creative_snippet_openwrap.html")
+      bidder_str, order_name, advertiser_id, num_creatives, creative_file=creative_file, safe_frame=use_safe_frame)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
-    currency_code, custom_targeting, ad_unit_ids=ad_unit_ids)
+    currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids)
 
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
@@ -393,7 +421,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   """)
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, currency_code, custom_targeting, ad_unit_ids=None):
+  sizes, key_gen_obj, currency_code, custom_targeting, creative_type, ad_unit_ids=None):
   """
   Create a line item config for each price bucket.
 
@@ -412,7 +440,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
 
   # The DFP targeting value ID for this `hb_bidder` code.
   key_gen_obj.set_bidder_value(bidder_code)
-
+  key_gen_obj.set_creative_type(creative_type)
   key_gen_obj.set_custom_targeting(custom_targeting)
 
   line_items_config = []
@@ -563,6 +591,12 @@ def main():
     num_placements
   )
 
+  creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
+  if creative_type is None:
+    creative_type = "WEB"
+  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"]:
+    raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
+
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
     raise BadSettingException('PREBID_BIDDER_CODE')
@@ -603,6 +637,7 @@ def main():
       {name_start_format}hb_pb{format_end} = {value_start_format}{prices_summary}{format_end}
       {name_start_format}hb_bidder{format_end} = {value_start_format}{bidder_code}{format_end}
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
+      {name_start_format}creative_type{format_end} = {value_start_format}{creative_type}{format_end}
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
     """.format(
       num_line_items = len(prices),
@@ -612,6 +647,7 @@ def main():
       prices_summary=prices_summary,
       bidder_code=bidder_code,
       placements=placements,
+      creative_type=creative_type,
       sizes=sizes,
       custom_targeting=custom_targeting,
       name_start_format=color.BOLD,
@@ -633,6 +669,7 @@ def main():
     sizes,
     bidder_code,
     prices,
+    creative_type,
     num_creatives,
     currency_code,
     custom_targeting

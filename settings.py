@@ -81,6 +81,11 @@ PREBID_PRICE_BUCKETS = {
   'increment': 0.10,
 }
 
+# OpewnWrap Create Type:  Which creative type should be used.
+#   Value values are: WEB, WEB_SAFEFRAME, AMP, IN_APP
+#   Defaults to WEB
+#OPENWRAP_CREATIVE_TYPE = "WEB"
+
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool
 #OPENWRAP_BUCKET_CSV = 'TestLineItems.csv'
