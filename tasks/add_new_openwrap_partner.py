@@ -392,6 +392,8 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
     creative_file = "creative_snippet_openwrap_amp.html"
   elif creative_type == "IN_APP":
     creative_file = "creative_snippet_openwrap_in_app.html"
+  elif creative_type == "UNIVERSAL":
+    creative_file = "creative_snippet_openwrap_universal.html"
 
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
       bidder_str, order_name, advertiser_id, num_creatives, creative_file=creative_file, safe_frame=use_safe_frame)
@@ -594,7 +596,7 @@ def main():
   creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
   if creative_type is None:
     creative_type = "WEB"
-  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"]:
+  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"]:
     raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
 
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)

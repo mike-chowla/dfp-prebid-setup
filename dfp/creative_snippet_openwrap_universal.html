@@ -1,0 +1,47 @@
+<script type='text/javascript'>
+
+function load_pwt(cb) {
+	var s = document.createElement('script');
+	s.setAttribute('src', '//ads.pubmatic.com/AdServer/js/pwt/%%PATTERN:pwtpubid%%/%%PATTERN:pwtprofid%%/%%PATTERN:pwtverid%%/pwt.js');
+	s.onload = cb;
+	document.body.appendChild(s);
+}
+
+if ('%%PATTERN:pwtplt%%' == 'amp') {
+	function amp_callback() {
+		window.PWT.renderOWCreative(document, {
+			pwtecp: '%%PATTERN:pwtecp%%',
+			pwtbst: '%%PATTERN:pwtbst%%',
+			pwtcid: '%%PATTERN:pwtcid%%',
+			pwtcurl: '%%PATTERN:pwtcurl%%',
+			pwtpcapth: '%%PATTERN:pwtcpath%%',
+			pwtsid: '%%PATTERN:pwtsid%%',
+			pwtpid: '%%PATTERN:pwtpid%%'
+		});
+	}
+
+	load_pwt(amp_callback);
+
+} else if (window.$sf && window.$sf.ext) {
+	// display with safeframe
+	function sf_callback() {
+		try {
+			window.PWT.sfDisplayCreative(document, '%%PATTERN:pwtsid%%');
+		} catch (e) {}
+	}
+
+	load_pwt(sf_callback);
+
+} else {
+	// display friendly iframe
+	var i = 0,
+		w = window.self;
+	while (w !== window.top && !(w.PWT && w.PWT.displayCreative) && i < 10) {
+		w = window.self.parent;
+		i++;
+	}
+	try {
+		w.PWT.displayCreative(document, '%%PATTERN:pwtsid%%');
+	} catch (e) {}
+}
+</script>

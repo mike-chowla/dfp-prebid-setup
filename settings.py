@@ -96,6 +96,10 @@ PREBID_PRICE_BUCKETS = {
 #    ("b", "IS_NOT", ("4", "5", "6")),
 #]
 
+# OpenWrap Creative Type
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"
+#  Defaults to WEB
+#OPENWRAP_CREATIVE_TYPE = "WEB"
 
 #########################################################################
 
