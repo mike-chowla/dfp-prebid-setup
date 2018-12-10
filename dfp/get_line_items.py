@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import sys
 
 from googleads import dfp
 
@@ -47,7 +48,10 @@ def get_line_items_for_order(order_id):
     return line_items
 
 def main():
-  print("Nothing to see here, move along")
+  if len(sys.argv) > 1:
+       get_line_items_for_order(int(sys.argv[1]))
+  else:
+      print("No Order Id")
   pass
 
 if __name__ == '__main__':
