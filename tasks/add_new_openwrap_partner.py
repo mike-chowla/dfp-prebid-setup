@@ -349,7 +349,8 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
-    sizes, bidder_code, prices, creative_type, num_creatives, currency_code, custom_targeting):
+    sizes, bidder_code, prices, creative_type, num_creatives, currency_code,
+    custom_targeting, same_adv_exception):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -402,7 +403,8 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
-    currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids)
+    currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids,
+    same_adv_exception=same_adv_exception)
 
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
@@ -423,7 +425,8 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   """)
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, currency_code, custom_targeting, creative_type, ad_unit_ids=None):
+  sizes, key_gen_obj, currency_code, custom_targeting, creative_type,
+  ad_unit_ids=None, same_adv_exception=False):
   """
   Create a line item config for each price bucket.
 
@@ -477,7 +480,8 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       sizes=sizes,
       key_gen_obj=key_gen_obj,
       currency_code=currency_code,
-      ad_unit_ids=ad_unit_ids
+      ad_unit_ids=ad_unit_ids,
+      same_adv_exception=same_adv_exception
     )
 
     line_items_config.append(config)
@@ -603,6 +607,10 @@ def main():
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
     raise BadSettingException('PREBID_BIDDER_CODE')
 
+  same_adv_exception = getattr(settings, 'PREBID_SAME_ADV_EXCEPTION', False)
+  if not isinstance(same_adv_exception, bool):
+      raise BadSettingException('PREBID_SAME_ADV_EXCEPTION')
+
   custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
   if custom_targeting != None:
       if not isinstance(custom_targeting, (list, tuple)):
@@ -641,6 +649,7 @@ def main():
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
       {name_start_format}creative_type{format_end} = {value_start_format}{creative_type}{format_end}
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
+      {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
     """.format(
       num_line_items = len(prices),
       order_name=order_name,
@@ -652,6 +661,7 @@ def main():
       creative_type=creative_type,
       sizes=sizes,
       custom_targeting=custom_targeting,
+      same_adv_exception=same_adv_exception,
       name_start_format=color.BOLD,
       format_end=color.END,
       value_start_format=color.BLUE,
@@ -674,7 +684,8 @@ def main():
     creative_type,
     num_creatives,
     currency_code,
-    custom_targeting
+    custom_targeting,
+    same_adv_exception
   )
 
 

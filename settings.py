@@ -81,10 +81,9 @@ PREBID_PRICE_BUCKETS = {
   'increment': 0.10,
 }
 
-# OpewnWrap Create Type:  Which creative type should be used.
-#   Value values are: WEB, WEB_SAFEFRAME, AMP, IN_APP
-#   Defaults to WEB
-#OPENWRAP_CREATIVE_TYPE = "WEB"
+# Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
+#   Currently only works for OpenWrap
+#PREBID_SAME_ADV_EXCEPTION = True
 
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool

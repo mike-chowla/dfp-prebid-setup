@@ -23,7 +23,7 @@ def create_line_items(line_items):
   return created_line_item_ids
 
 def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
-  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None):
+  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False):
   """
   Creates a line item config object.
 
@@ -74,6 +74,7 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
       'goalType': 'NONE'
     },
     'creativePlaceholders': creative_placeholders,
+    'disableSameAdvertiserCompetitiveExclusion': same_adv_exception
   }
 
   if placement_ids and len(placement_ids) > 0:
