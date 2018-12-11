@@ -23,7 +23,7 @@ def create_line_items(line_items):
   return created_line_item_ids
 
 def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
-  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False):
+  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False, device_categories=None):
   """
   Creates a line item config object.
 
@@ -76,6 +76,13 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
     'creativePlaceholders': creative_placeholders,
     'disableSameAdvertiserCompetitiveExclusion': same_adv_exception
   }
+
+  if device_categories != None and len(device_categories) > 0:
+      dev_cat_targeting = []
+      for dc in device_categories:
+          dev_cat_targeting.append({'id': str(dc)})
+
+      line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
 
   if placement_ids and len(placement_ids) > 0:
       line_item_config['targeting']['inventoryTargeting'] = { 'targetedPlacementIds': placement_ids }

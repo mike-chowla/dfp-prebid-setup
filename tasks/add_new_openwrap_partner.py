@@ -21,6 +21,7 @@ import dfp.get_advertisers
 import dfp.get_custom_targeting
 import dfp.get_placements
 import dfp.get_users
+import dfp.get_device_categories
 import dfp.get_root_ad_unit_id
 from dfp.exceptions import (
   BadSettingException,
@@ -350,7 +351,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
     sizes, bidder_code, prices, creative_type, num_creatives, currency_code,
-    custom_targeting, same_adv_exception):
+    custom_targeting, same_adv_exception, device_categories):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -367,6 +368,21 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
       # Run of network
       root_id = dfp.get_root_ad_unit_id.get_root_ad_unit_id()
       ad_unit_ids = [ root_id ]
+
+  # Get the device category IDs
+  device_category_ids = None
+  if device_categories != None:
+      device_category_ids = []
+      if isinstance(device_categories, str):
+          device_categories = (device_categories)
+
+      dc_map = dfp.get_device_categories.get_device_categories()
+
+      for dc in device_categories:
+          if dc in dc_map:
+              device_category_ids.append(dc_map[dc])
+          else:
+              raise BadSettingException("Invalid Device Cagetory: " . dc)
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
@@ -404,7 +420,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
     currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids,
-    same_adv_exception=same_adv_exception)
+    same_adv_exception=same_adv_exception, device_category_ids=device_category_ids)
 
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
@@ -426,7 +442,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   sizes, key_gen_obj, currency_code, custom_targeting, creative_type,
-  ad_unit_ids=None, same_adv_exception=False):
+  ad_unit_ids=None, same_adv_exception=False, device_category_ids=None):
   """
   Create a line item config for each price bucket.
 
@@ -481,7 +497,8 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       key_gen_obj=key_gen_obj,
       currency_code=currency_code,
       ad_unit_ids=ad_unit_ids,
-      same_adv_exception=same_adv_exception
+      same_adv_exception=same_adv_exception,
+      device_categories=device_category_ids
     )
 
     line_items_config.append(config)
@@ -611,6 +628,10 @@ def main():
   if not isinstance(same_adv_exception, bool):
       raise BadSettingException('PREBID_SAME_ADV_EXCEPTION')
 
+  device_categories = getattr(settings, 'PREBID_DEVICE_CATEGORIES', None)
+  if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
+       raise BadSettingException('PREBID_DEVICE_CATEGORIES')
+
   custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
   if custom_targeting != None:
       if not isinstance(custom_targeting, (list, tuple)):
@@ -650,6 +671,7 @@ def main():
       {name_start_format}creative_type{format_end} = {value_start_format}{creative_type}{format_end}
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
       {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
+      {name_start_format}device categories{format_end} = {value_start_format}{device_categories}{format_end}
     """.format(
       num_line_items = len(prices),
       order_name=order_name,
@@ -662,6 +684,7 @@ def main():
       sizes=sizes,
       custom_targeting=custom_targeting,
       same_adv_exception=same_adv_exception,
+      device_categories=device_categories,
       name_start_format=color.BOLD,
       format_end=color.END,
       value_start_format=color.BLUE,
@@ -685,7 +708,8 @@ def main():
     num_creatives,
     currency_code,
     custom_targeting,
-    same_adv_exception
+    same_adv_exception,
+    device_categories
   )
 
 

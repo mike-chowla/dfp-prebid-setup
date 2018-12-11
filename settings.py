@@ -85,6 +85,12 @@ PREBID_PRICE_BUCKETS = {
 #   Currently only works for OpenWrap
 #PREBID_SAME_ADV_EXCEPTION = True
 
+# Device Category Targeting
+#    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
+#    Defaults to no device category targeting
+#    Currently supported for OpenWrap Only
+#PREBID_DEVICE_CATEGORIES = ['Feature Phone', 'Smartphone']
+
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool
 #OPENWRAP_BUCKET_CSV = 'TestLineItems.csv'
