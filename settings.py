@@ -91,6 +91,12 @@ PREBID_PRICE_BUCKETS = {
 #    Currently supported for OpenWrap Only
 #PREBID_DEVICE_CATEGORIES = ['Feature Phone', 'Smartphone']
 
+# DFP Roadblock Type
+#    Valid Values: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'
+#    Defaults to 'ONE_OR_MORE'
+#    Currently supported for OpenWrap Only
+#PREBID_ROADBLOCK_TYPE = 'ONE_OR_MORE'
+
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool
 #OPENWRAP_BUCKET_CSV = 'TestLineItems.csv'

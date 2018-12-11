@@ -23,7 +23,8 @@ def create_line_items(line_items):
   return created_line_item_ids
 
 def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
-  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False, device_categories=None):
+  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False,
+  device_categories=None, roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
 
@@ -69,6 +70,7 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
       'currencyCode': currency_code,
       'microAmount': cpm_micro_amount
     },
+    'roadblockingType': roadblock_type,
     'creativeRotationType': 'EVEN',
     'primaryGoal': {
       'goalType': 'NONE'

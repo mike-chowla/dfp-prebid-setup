@@ -351,7 +351,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
 def setup_partner(user_email, advertiser_name, order_name, placements,
     sizes, bidder_code, prices, creative_type, num_creatives, currency_code,
-    custom_targeting, same_adv_exception, device_categories):
+    custom_targeting, same_adv_exception, device_categories, roadblock_type):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -420,7 +420,8 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
     currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids,
-    same_adv_exception=same_adv_exception, device_category_ids=device_category_ids)
+    same_adv_exception=same_adv_exception, device_category_ids=device_category_ids,
+    roadblock_type=roadblock_type)
 
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
@@ -442,7 +443,8 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   sizes, key_gen_obj, currency_code, custom_targeting, creative_type,
-  ad_unit_ids=None, same_adv_exception=False, device_category_ids=None):
+  ad_unit_ids=None, same_adv_exception=False, device_category_ids=None,
+  roadblock_type='ONE_OR_MORE'):
   """
   Create a line item config for each price bucket.
 
@@ -455,6 +457,10 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     key_gen_obj (obj)
     currency_code (str)
     custom_targeting (arr)
+    ad_unit_ids (arr)
+    same_adv_exception(bool)
+    device_category_ids (int)
+    roadblock_type (str)
   Returns:
     an array of objects: the array of DFP line item configurations
   """
@@ -498,7 +504,8 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       currency_code=currency_code,
       ad_unit_ids=ad_unit_ids,
       same_adv_exception=same_adv_exception,
-      device_categories=device_category_ids
+      device_categories=device_category_ids,
+      roadblock_type=roadblock_type
     )
 
     line_items_config.append(config)
@@ -632,6 +639,10 @@ def main():
   if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
        raise BadSettingException('PREBID_DEVICE_CATEGORIES')
 
+  roadblock_type = getattr(settings, 'PREBID_ROADBLOCK_TYPE', 'ONE_OR_MORE')
+  if roadblock_type not in ('ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'):
+      raise BadSettingException('PREBID_ROADBLOCK_TYPE')
+
   custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
   if custom_targeting != None:
       if not isinstance(custom_targeting, (list, tuple)):
@@ -672,6 +683,7 @@ def main():
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
       {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
       {name_start_format}device categories{format_end} = {value_start_format}{device_categories}{format_end}
+      {name_start_format}roadblock type{format_end} = {value_start_format}{roadblock_type}{format_end}
     """.format(
       num_line_items = len(prices),
       order_name=order_name,
@@ -685,6 +697,7 @@ def main():
       custom_targeting=custom_targeting,
       same_adv_exception=same_adv_exception,
       device_categories=device_categories,
+      roadblock_type=roadblock_type,
       name_start_format=color.BOLD,
       format_end=color.END,
       value_start_format=color.BLUE,
@@ -709,7 +722,8 @@ def main():
     currency_code,
     custom_targeting,
     same_adv_exception,
-    device_categories
+    device_categories,
+    roadblock_type
   )
 
 
