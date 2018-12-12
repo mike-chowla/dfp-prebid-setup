@@ -59,6 +59,25 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = False
 # The currency to use in DFP when setting line item CPMs. Defaults to 'USD'.
 # DFP_CURRENCY_CODE = 'USD'
 
+# Optional
+# Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
+#   Currently only works for OpenWrap
+#DFP_SAME_ADV_EXCEPTION = True
+
+# Optional
+# Device Category Targeting
+#    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
+#    Defaults to no device category targeting
+#    Currently supported for OpenWrap Only
+#DFP_DEVICE_CATEGORIES = ['Feature Phone', 'Smartphone']
+
+# Optional
+# DFP Roadblock Type
+#    Valid Values: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'
+#    Defaults to 'ONE_OR_MORE'
+#    Currently supported for OpenWrap Only
+#DFP_ROADBLOCK_TYPE = 'AS_MANY_AS_POSSIBLE'
+
 #########################################################################
 # PREBID SETTINGS
 #########################################################################
@@ -80,22 +99,6 @@ PREBID_PRICE_BUCKETS = {
   'max' : 20,
   'increment': 0.10,
 }
-
-# Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
-#   Currently only works for OpenWrap
-#PREBID_SAME_ADV_EXCEPTION = True
-
-# Device Category Targeting
-#    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
-#    Defaults to no device category targeting
-#    Currently supported for OpenWrap Only
-#PREBID_DEVICE_CATEGORIES = ['Feature Phone', 'Smartphone']
-
-# DFP Roadblock Type
-#    Valid Values: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'
-#    Defaults to 'ONE_OR_MORE'
-#    Currently supported for OpenWrap Only
-#PREBID_ROADBLOCK_TYPE = 'ONE_OR_MORE'
 
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool

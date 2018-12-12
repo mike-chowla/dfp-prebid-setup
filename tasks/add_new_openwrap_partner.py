@@ -631,17 +631,17 @@ def main():
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
     raise BadSettingException('PREBID_BIDDER_CODE')
 
-  same_adv_exception = getattr(settings, 'PREBID_SAME_ADV_EXCEPTION', False)
+  same_adv_exception = getattr(settings, 'DFP_SAME_ADV_EXCEPTION', False)
   if not isinstance(same_adv_exception, bool):
-      raise BadSettingException('PREBID_SAME_ADV_EXCEPTION')
+      raise BadSettingException('DFP_SAME_ADV_EXCEPTION')
 
-  device_categories = getattr(settings, 'PREBID_DEVICE_CATEGORIES', None)
+  device_categories = getattr(settings, 'DFP_DEVICE_CATEGORIES', None)
   if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
-       raise BadSettingException('PREBID_DEVICE_CATEGORIES')
+       raise BadSettingException('DFP_DEVICE_CATEGORIES')
 
-  roadblock_type = getattr(settings, 'PREBID_ROADBLOCK_TYPE', 'ONE_OR_MORE')
+  roadblock_type = getattr(settings, 'DFP_ROADBLOCK_TYPE', 'ONE_OR_MORE')
   if roadblock_type not in ('ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'):
-      raise BadSettingException('PREBID_ROADBLOCK_TYPE')
+      raise BadSettingException('DFP_ROADBLOCK_TYPE')
 
   custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
   if custom_targeting != None:
