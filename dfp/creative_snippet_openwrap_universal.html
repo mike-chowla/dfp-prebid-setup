@@ -9,7 +9,16 @@ function load_pwt(cb) {
 }
 
 if ('%%PATTERN:pwtplt%%' == 'amp') {
+
 	function amp_callback() {
+
+		var ad_size = '%%PATTERN:pwtsz%%';
+		var orig_function = window.pbjs.renderAd;
+		window.pbjs.renderAd = function (arg1, arg2, arg3) {
+			arg3.size = ad_size;
+			orig_function(arg1, arg2, arg3);
+		};
+
 		window.PWT.renderOWCreative(document, {
 			pwtecp: '%%PATTERN:pwtecp%%',
 			pwtbst: '%%PATTERN:pwtbst%%',
@@ -17,7 +26,8 @@ if ('%%PATTERN:pwtplt%%' == 'amp') {
 			pwtcurl: '%%PATTERN:pwtcurl%%',
 			pwtpcapth: '%%PATTERN:pwtcpath%%',
 			pwtsid: '%%PATTERN:pwtsid%%',
-			pwtpid: '%%PATTERN:pwtpid%%'
+			pwtpid: '%%PATTERN:pwtpid%%',
+			pwtsz: '%%PATTERN:pwtsz%%'
 		});
 	}
 
@@ -44,7 +54,7 @@ if ('%%PATTERN:pwtplt%%' == 'amp') {
 			load_pwt(sf_callback);
 		});
 	}
-	
+
 } else {
 	// display friendly iframe
 	var i = 0,
