@@ -49,7 +49,9 @@ def get_line_items_for_order(order_id):
 
 def main():
   if len(sys.argv) > 1:
-       get_line_items_for_order(int(sys.argv[1]))
+       li = get_line_items_for_order(int(sys.argv[1]))
+       if len(li) > 0:
+           print(li[0])
   else:
       print("No Order Id")
   pass
