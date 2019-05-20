@@ -1,8 +1,4 @@
-
-# From: https://github.com/googleads/googleads-python-lib/blob/master/googleads.yaml
-dfp:
-  application_name: INSERT_APPLICATION_NAME_HERE
-
+ad_manager:
   #############################################################################
   # Option 1: OAuth Service Account                                           #
   #############################################################################

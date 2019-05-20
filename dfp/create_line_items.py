@@ -1,5 +1,5 @@
 
-from googleads import dfp
+from googleads import ad_manager
 
 from dfp.client import get_client
 
@@ -13,7 +13,7 @@ def create_line_items(line_items):
     an array: an array of created line item IDs
   """
   dfp_client = get_client()
-  line_item_service = dfp_client.GetService('LineItemService', version='v201802')
+  line_item_service = dfp_client.GetService('LineItemService', version='v201811')
   line_items = line_item_service.createLineItems(line_items)
 
   # Return IDs of created line items.
@@ -22,9 +22,10 @@ def create_line_items(line_items):
     created_line_item_ids.append(line_item['id'])
   return created_line_item_ids
 
-def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
-  sizes, key_gen_obj, currency_code='USD', ad_unit_ids=None, same_adv_exception=False,
-  device_categories=None, roadblock_type = 'ONE_OR_MORE'):
+
+def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
+                            currency_code='USD', same_adv_exception=False, device_categories=None,
+                            roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
 
@@ -32,6 +33,7 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
     name (str): the name of the line item
     order_id (int): the ID of the order in DFP
     placement_ids (arr): an array of DFP placement IDs to target
+    ad_unit_ids (arr): an array of DFP ad unit IDs to target
     cpm_micro_amount (int): the currency value (in micro amounts) of the
       line item
     sizes (arr): an array of objects, each containing 'width' and 'height'
@@ -59,7 +61,7 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
     'orderId': order_id,
     # https://developers.google.com/doubleclick-publishers/docs/reference/v201802/LineItemService.Targeting
     'targeting': {
-      'inventoryTargeting': None,
+      'inventoryTargeting': {},
       'customTargeting': top_set,
     },
     'startDateTimeType': 'IMMEDIATELY',
@@ -86,12 +88,10 @@ def create_line_item_config(name, order_id, placement_ids, cpm_micro_amount,
 
       line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
 
-  if placement_ids and len(placement_ids) > 0:
-      line_item_config['targeting']['inventoryTargeting'] = { 'targetedPlacementIds': placement_ids }
-  else:
-      ad_unit_targeting = []
-      for a in ad_unit_ids:
-          ad_unit_targeting.append({"adUnitId": a, "includeDescendants": True })
-      line_item_config['targeting']['inventoryTargeting'] = { 'targetedAdUnits': ad_unit_targeting }
+  if placement_ids is not None:
+    line_item_config['targeting']['inventoryTargeting']['targetedPlacementIds'] = placement_ids
+
+  if ad_unit_ids is not None:
+    line_item_config['targeting']['inventoryTargeting']['targetedAdUnits'] = [{'adUnitId': id} for id in ad_unit_ids]
 
   return line_item_config

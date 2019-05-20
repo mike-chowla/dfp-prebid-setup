@@ -419,10 +419,9 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
-    currency_code, custom_targeting, creative_type, ad_unit_ids=ad_unit_ids,
-    same_adv_exception=same_adv_exception, device_category_ids=device_category_ids,
-    roadblock_type=roadblock_type)
-
+    currency_code, custom_targeting, creative_type, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
+    device_category_ids=device_category_ids, roadblock_type=roadblock_type)
+    
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
   #pp.pprint(line_items_config)

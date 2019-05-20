@@ -22,6 +22,9 @@ DFP_ADVERTISER_NAME = None
 #  Leave empty for Run of Network (requires Network permission)
 DFP_TARGETED_PLACEMENT_NAMES = []
 
+# Names of ad units the line items should target.
+DFP_TARGETED_AD_UNIT_NAMES = []
+
 # Sizes of placements. These are used to set line item and creative sizes.
 DFP_PLACEMENT_SIZES = [
   {

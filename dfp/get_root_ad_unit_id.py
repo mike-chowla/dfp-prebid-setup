@@ -2,7 +2,7 @@
 
 import logging
 
-from googleads import dfp
+from googleads import ad_manager
 
 import settings
 from dfp.client import get_client
@@ -26,7 +26,7 @@ def get_root_ad_unit_id():
   """
 
   dfp_client = get_client()
-  network_service = dfp_client.GetService('NetworkService', version='v201802')
+  network_service = dfp_client.GetService('NetworkService', version='v201811')
   current_network = network_service.getCurrentNetwork()
 
   return current_network['effectiveRootAdUnitId']

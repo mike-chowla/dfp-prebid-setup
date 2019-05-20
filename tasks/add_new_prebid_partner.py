@@ -15,6 +15,7 @@ import dfp.create_custom_targeting
 import dfp.create_creatives
 import dfp.create_line_items
 import dfp.create_orders
+import dfp.get_ad_units
 import dfp.get_advertisers
 import dfp.get_custom_targeting
 import dfp.get_placements
@@ -107,8 +108,8 @@ class PrebidTargetingKeyGen(TargetingKeyGen):
 
       return top_set
 
-def setup_partner(user_email, advertiser_name, order_name, placements,
-    sizes, bidder_code, prices, num_creatives, currency_code):
+def setup_partner(user_email, advertiser_name, order_name, placements, ad_units, sizes, bidder_code, prices,
+                  num_creatives, currency_code):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -118,6 +119,9 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   # Get the placement IDs.
   placement_ids = dfp.get_placements.get_placement_ids_by_name(placements)
+
+  # Get the ad unit IDs.
+  ad_unit_ids = dfp.get_ad_units.get_ad_unit_ids_by_name(ad_units)
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
@@ -133,7 +137,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   # Create line items.
   line_items_config = create_line_item_configs(prices, order_id,
-    placement_ids, bidder_code, sizes, PrebidTargetingKeyGen(),
+    placement_ids, ad_unit_ids, bidder_code, sizes, PrebidTargetingKeyGen(),
     currency_code)
 
   logger.info("Creating line items...")
@@ -152,7 +156,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   """)
 
-def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
+def create_line_item_configs(prices, order_id, placement_ids, ad_unit_ids, bidder_code,
   sizes, key_gen_obj, currency_code):
   """
   Create a line item config for each price bucket.
@@ -161,6 +165,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     prices (array)
     order_id (int)
     placement_ids (arr)
+    ad_unit_ids (arr)
     bidder_code (str)
     sizes (arr)
     key_gen_obj (obj)
@@ -190,6 +195,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       name=line_item_name,
       order_id=order_id,
       placement_ids=placement_ids,
+      ad_unit_ids=ad_unit_ids,
       cpm_micro_amount=price,
       sizes=sizes,
       key_gen_obj=key_gen_obj,
@@ -266,12 +272,14 @@ def main():
   if order_name is None:
     raise MissingSettingException('DFP_ORDER_NAME')
 
-  placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
-  if placements is None:
-    raise MissingSettingException('DFP_TARGETED_PLACEMENT_NAMES')
-  elif len(placements) < 1:
-    raise BadSettingException('The setting "DFP_TARGETED_PLACEMENT_NAMES" '
-      'must contain at least one DFP placement ID.')
+  placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', [])
+  ad_units = getattr(settings, 'DFP_TARGETED_AD_UNIT_NAMES', [])
+
+  if ad_units is None and placements is None:
+    raise MissingSettingException('DFP_TARGETED_PLACEMENT_NAMES or DFP_TARGETED_AD_UNIT_NAMES')
+  elif (placements is None or len(placements) < 1) and (ad_units is None or len(ad_units) < 1):
+    raise BadSettingException('The setting "DFP_TARGETED_PLACEMENT_NAMES" or "DFP_TARGETED_AD_UNIT_NAMES" '
+      'must contain at least one DFP placement or ad unit.')
 
   sizes = getattr(settings, 'DFP_PLACEMENT_SIZES', None)
   if sizes is None:
@@ -315,6 +323,7 @@ def main():
       {name_start_format}hb_pb{format_end} = {value_start_format}{prices_summary}{format_end}
       {name_start_format}hb_bidder{format_end} = {value_start_format}{bidder_code}{format_end}
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
+      {name_start_format}ad units{format_end} = {value_start_format}{ad_units}{format_end}
 
     """.format(
       num_line_items = len(prices),
@@ -324,6 +333,7 @@ def main():
       prices_summary=prices_summary,
       bidder_code=bidder_code,
       placements=placements,
+      ad_units=ad_units,
       sizes=sizes,
       name_start_format=color.BOLD,
       format_end=color.END,
@@ -336,17 +346,7 @@ def main():
     logger.info('Exiting.')
     return
 
-  setup_partner(
-    user_email,
-    advertiser_name,
-    order_name,
-    placements,
-    sizes,
-    bidder_code,
-    prices,
-    num_creatives,
-    currency_code,
-  )
+  setup_partner(user_email, advertiser_name, order_name, placements, ad_units, sizes, bidder_code, prices, num_creatives, currency_code)
 
 if __name__ == '__main__':
   main()

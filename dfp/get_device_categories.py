@@ -4,7 +4,7 @@
 import logging
 import sys
 
-from googleads import dfp
+from googleads import ad_manager
 
 from dfp.client import get_client
 
@@ -23,7 +23,7 @@ def get_device_categories():
   """
 
   dfp_client = get_client()
-  report_downloader = dfp_client.GetDataDownloader(version='v201802')
+  report_downloader = dfp_client.GetDataDownloader(version='v201811')
 
   device_query = ('SELECT Id, DeviceCategoryName '
                          'FROM Device_Category ')
