@@ -33,6 +33,7 @@ def create_advertiser(name):
       'type': 'AD_NETWORK'
     }
   ]
+
   advertisers = company_service.createCompanies(advertisers_config)
   advertiser = advertisers[0]
 
@@ -56,22 +57,27 @@ def get_advertiser_id_by_name(name):
   company_service = dfp_client.GetService('CompanyService', version='v201802')
 
   # Filter by name.
-  query = 'WHERE name = :name'
+  query = 'WHERE name = :name AND type = :type'
   values = [
       {'key': 'name',
        'value': {
            'xsi_type': 'TextValue',
            'value': name
        }},
+      {'key': 'type',
+       'value': {
+           'xsi_type': 'TextValue',
+           'value': "AD_NETWORK" 
+       }},
   ]
   statement = dfp.FilterStatement(query, values)
 
   response = company_service.getCompaniesByStatement(statement.ToStatement())
-
+  print(response)
   # A company is required.
   no_company_found = False
   try:
-    no_company_found = True if len(response['results']) < 1 else False 
+    no_company_found = True if len(response['results']) < 1 else False
   except (AttributeError, KeyError):
     no_company_found = True
 
@@ -81,6 +87,7 @@ def get_advertiser_id_by_name(name):
     else:
       raise DFPObjectNotFound('No advertiser found with name {0}'.format(name))
   elif len(response['results']) > 1:
+    print(response)
     raise BadSettingException(
       'Multiple advertisers found with name {0}'.format(name))
   else:
@@ -97,7 +104,7 @@ def main():
 
   Returns:
     an integer: the company's DFP ID
-  """  
+  """
 
   advertiser_name = getattr(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
