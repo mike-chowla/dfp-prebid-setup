@@ -1,12 +1,16 @@
 
 <script type='text/javascript'>
 
-function load_pwt(cb) {
-		var s = document.createElement('script');
-		s.setAttribute('src', '//ads.pubmatic.com/AdServer/js/pwt/%%PATTERN:pwtpubid%%/%%PATTERN:pwtprofid%%/%%PATTERN:pwtverid%%/pwt.js');
-		s.onload = cb;
-		document.body.appendChild(s);
-}
+	function load_script(url, cb) {
+			var s = document.createElement('script');
+			s.setAttribute('src', url);
+			s.onload = cb;
+			document.body.appendChild(s);
+	}
+
+	function load_pwt(cb) {
+		load_script('//ads.pubmatic.com/AdServer/js/pwt/%%PATTERN:pwtpubid%%/%%PATTERN:pwtprofid%%/%%PATTERN:pwtverid%%/pwt.js', cb);
+	}
 
 if ('%%PATTERN:pwtplt%%' == 'amp') {
 	function amp_callback() {
@@ -28,7 +32,11 @@ if ('%%PATTERN:pwtplt%%' == 'amp') {
 			load_pwt(amp_callback);
 		});
 	}
-
+} else if ('%%PATTERN:pwtplt%%' == 'inapp') {
+	function inapp_callback() {
+		admob.events.dispatchAppEvent("pubmaticdm","%%PATTERN:bidid%%");
+	}
+	load_script("https://media.admob.com/api/v1/google_mobile_app_ads.js", inapp_callback);
 } else if (window.$sf && window.$sf.ext) {
 	// display with safeframe
 	function sf_callback() {
@@ -44,7 +52,7 @@ if ('%%PATTERN:pwtplt%%' == 'amp') {
 			load_pwt(sf_callback);
 		});
 	}
-	
+
 } else {
 	// display friendly iframe
 	var i = 0,
