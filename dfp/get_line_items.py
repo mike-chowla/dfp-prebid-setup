@@ -25,7 +25,7 @@ def get_line_items_for_order(order_id):
   dfp_client = get_client()
   line_item_service = dfp_client.GetService('LineItemService', version='v201811')
 
-  statement = (dfp.StatementBuilder()
+  statement = (ad_manager.StatementBuilder()
                .Where('orderId = :order_id')
                .WithBindVariable('order_id', order_id))
 
