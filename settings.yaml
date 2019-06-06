@@ -1,0 +1,25 @@
+DFP_ADVERTISER_NAME: PubMatic
+DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST: false
+DFP_DEVICE_CATEGORIES:
+- Feature Phone
+- Smartphone
+DFP_ORDER_NAME: OW-Param-Rename-2
+DFP_PLACEMENT_SIZES:
+- height: '250'
+  width: '300'
+- height: '90'
+  width: '728'
+DFP_ROADBLOCK_TYPE: AS_MANY_AS_POSSIBLE
+DFP_SAME_ADV_EXCEPTION: true
+DFP_TARGETED_PLACEMENT_NAMES: []
+DFP_USER_EMAIL_ADDRESS: mike.chowla@gmail.com
+DFP_USE_EXISTING_ORDER_IF_EXISTS: true
+GOOGLEADS_YAML_FILE: /Users/mike.chowla/src/dfp-prebid-setup/googleads.yaml
+OPENWRAP_BUCKET_CSV: TestLineItems.csv
+OPENWRAP_CREATIVE_TYPE: UNIVERSAL
+PREBID_BIDDER_CODE: pubmatic
+PREBID_PRICE_BUCKETS:
+  increment: 0.1
+  max: 20
+  min: 0
+  precision: 2

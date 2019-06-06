@@ -7,11 +7,12 @@ import sys
 import csv
 import pprint
 import re
+import argparse
 from builtins import input
+from types import ModuleType
 
 from colorama import init
 
-import settings
 import dfp.associate_line_items_and_creatives
 import dfp.create_custom_targeting
 import dfp.create_creatives
@@ -574,26 +575,62 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
+def get_setting(settings_obj, setting_name, setting_default):
+    if isinstance(settings_obj, ModuleType):
+        return getattr(settings_obj, setting_name, setting_default)
+    else:
+        if setting_name in settings_obj:
+            return settings_obj[setting_name]
+        else:
+            return setting_default
+    
 def main():
   """
   Validate the settings and ask for confirmation from the user. Then,
   start all necessary DFP tasks.
   """
 
-  user_email = getattr(settings, 'DFP_USER_EMAIL_ADDRESS', None)
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--yaml_file', help='Use .yaml config instead of settings.py')
+  parser.add_argument('--generate_yaml', help='Output Config as a YAML file')
+  args = parser.parse_args()
+    
+  if args.yaml_file:
+    from yaml import safe_load
+    with open(args.yaml_file, 'r') as stream:
+        settings = safe_load(stream)
+  else:
+    import settings
+    
+  if args.generate_yaml:
+    from yaml import dump
+    
+    settings_dict = {}
+    for s in dir(settings): 
+        if not s.startswith('__'):
+            settings_dict[s] = getattr(settings, s, None)
+            
+    with open(args.generate_yaml, 'w') as outfile:
+        dump(settings_dict, outfile, default_flow_style=False)
+        return
+
+  print (type(settings))
+  print (settings)
+
+  user_email = get_setting(settings, 'DFP_USER_EMAIL_ADDRESS', None)
   if user_email is None:
     raise MissingSettingException('DFP_USER_EMAIL_ADDRESS')
 
-  advertiser_name = getattr(settings, 'DFP_ADVERTISER_NAME', None)
+  advertiser_name = get_setting(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
 
-  order_name = getattr(settings, 'DFP_ORDER_NAME', None)
+  order_name = get_setting(settings, 'DFP_ORDER_NAME', None)
   if order_name is None:
     raise MissingSettingException('DFP_ORDER_NAME')
 
   num_placements = 0
-  placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
+  placements = get_setting(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
   if placements is None:
     placements = []
 
@@ -603,46 +640,46 @@ def main():
   if num_placements == 0:
       num_placements = 1
 
-  sizes = getattr(settings, 'DFP_PLACEMENT_SIZES', None)
+  sizes = get_setting(settings, 'DFP_PLACEMENT_SIZES', None)
   if sizes is None:
     raise MissingSettingException('DFP_PLACEMENT_SIZES')
   elif len(sizes) < 1:
     raise BadSettingException('The setting "DFP_PLACEMENT_SIZES" '
       'must contain at least one size object.')
 
-  currency_code = getattr(settings, 'DFP_CURRENCY_CODE', 'USD')
+  currency_code = get_setting(settings, 'DFP_CURRENCY_CODE', 'USD')
 
   # How many creatives to attach to each line item. We need at least one
   # creative per ad unit on a page. See:
   # https://github.com/kmjennison/dfp-prebid-setup/issues/13
   num_creatives = (
-    getattr(settings, 'DFP_NUM_CREATIVES_PER_LINE_ITEM', None) or
+    get_setting(settings, 'DFP_NUM_CREATIVES_PER_LINE_ITEM', None) or
     num_placements
   )
 
-  creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
+  creative_type = get_setting(settings, 'OPENWRAP_CREATIVE_TYPE', None)
   if creative_type is None:
     creative_type = "WEB"
   elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"]:
     raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
 
-  bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
+  bidder_code = get_setting(settings, 'PREBID_BIDDER_CODE', None)
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
     raise BadSettingException('PREBID_BIDDER_CODE')
 
-  same_adv_exception = getattr(settings, 'DFP_SAME_ADV_EXCEPTION', False)
+  same_adv_exception = get_setting(settings, 'DFP_SAME_ADV_EXCEPTION', False)
   if not isinstance(same_adv_exception, bool):
       raise BadSettingException('DFP_SAME_ADV_EXCEPTION')
 
-  device_categories = getattr(settings, 'DFP_DEVICE_CATEGORIES', None)
+  device_categories = get_setting(settings, 'DFP_DEVICE_CATEGORIES', None)
   if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
        raise BadSettingException('DFP_DEVICE_CATEGORIES')
 
-  roadblock_type = getattr(settings, 'DFP_ROADBLOCK_TYPE', 'ONE_OR_MORE')
+  roadblock_type = get_setting(settings, 'DFP_ROADBLOCK_TYPE', 'ONE_OR_MORE')
   if roadblock_type not in ('ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'):
       raise BadSettingException('DFP_ROADBLOCK_TYPE')
 
-  custom_targeting = getattr(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
+  custom_targeting = get_setting(settings, 'OPENWRAP_CUSTOM_TARGETING', None)
   if custom_targeting != None:
       if not isinstance(custom_targeting, (list, tuple)):
           raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
@@ -657,7 +694,7 @@ def main():
          if not isinstance(ct[2], (list, tuple, str)):
              raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
 
-  price_buckets_csv = getattr(settings, 'OPENWRAP_BUCKET_CSV', None)
+  price_buckets_csv = get_setting(settings, 'OPENWRAP_BUCKET_CSV', None)
   if price_buckets_csv is None:
     raise MissingSettingException('OPENWRAP_BUCKET_CSV')
 
