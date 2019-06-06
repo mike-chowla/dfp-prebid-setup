@@ -15,7 +15,7 @@ from dfp.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-def create_advertiser(name):
+def create_advertiser(name, advertiser_type="AD_NETWORK"):
   """
   Creates a DFP advertiser with name `name` and returns its ID.
 
@@ -30,7 +30,7 @@ def create_advertiser(name):
   advertisers_config = [
     {
       'name': name,
-      'type': 'AD_NETWORK'
+      'type': advertiser_type
     }
   ]
 
@@ -44,7 +44,7 @@ def create_advertiser(name):
 
   return advertiser
 
-def get_advertiser_id_by_name(name):
+def get_advertiser_id_by_name(name, advertiser_type="AD_NETWORK"):
   """
   Returns a DFP company ID from company name.
 
@@ -67,7 +67,7 @@ def get_advertiser_id_by_name(name):
       {'key': 'type',
        'value': {
            'xsi_type': 'TextValue',
-           'value': "AD_NETWORK" 
+           'value': advertiser_type
        }},
   ]
   statement = ad_manager.FilterStatement(query, values)
@@ -83,7 +83,7 @@ def get_advertiser_id_by_name(name):
 
   if no_company_found:
     if getattr(settings, 'DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST', False):
-      advertiser = create_advertiser(name)
+      advertiser = create_advertiser(name, advertiser_type)
     else:
       raise DFPObjectNotFound('No advertiser found with name {0}'.format(name))
   elif len(response['results']) > 1:

@@ -350,7 +350,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
         return subCustomValueArray
 
-def setup_partner(user_email, advertiser_name, order_name, placements,
+def setup_partner(user_email, advertiser_name, advertiser_type, order_name, placements,
     sizes, bidder_code, prices, creative_type, num_creatives, currency_code,
     custom_targeting, same_adv_exception, device_categories, roadblock_type):
   """
@@ -387,7 +387,7 @@ def setup_partner(user_email, advertiser_name, order_name, placements,
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
-    advertiser_name)
+    advertiser_name, advertiser_type)
 
   # Create the order.
   order_id = dfp.create_orders.create_order(order_name, advertiser_id, user_id)
@@ -624,6 +624,10 @@ def main():
   advertiser_name = get_setting(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
+    
+  advertiser_type = get_setting(settings, 'DFP_ADVERTISER_TYPE', "AD_NETWORK")
+  if advertiser_type != "ADVERTISER" and advertiser_type != "AD_NETWORK":
+    raise BadSettingException('DFP_ADVERTISER_TYPE')
 
   order_name = get_setting(settings, 'DFP_ORDER_NAME', None)
   if order_name is None:
@@ -710,6 +714,7 @@ def main():
     Going to create {name_start_format}{num_line_items}{format_end} new line items.
       {name_start_format}Order{format_end}: {value_start_format}{order_name}{format_end}
       {name_start_format}Advertiser{format_end}: {value_start_format}{advertiser}{format_end}
+      {name_start_format}Advertiser Type{format_end}: {value_start_format}{advertiser_type}{format_end}
 
     Line items will have targeting:
       {name_start_format}hb_pb{format_end} = {value_start_format}{prices_summary}{format_end}
@@ -724,6 +729,7 @@ def main():
       num_line_items = len(prices),
       order_name=order_name,
       advertiser=advertiser_name,
+      advertiser_type=advertiser_type,
       user_email=user_email,
       prices_summary=prices_summary,
       bidder_code=bidder_code,
@@ -748,6 +754,7 @@ def main():
   setup_partner(
     user_email,
     advertiser_name,
+    advertiser_type,
     order_name,
     placements,
     sizes,
