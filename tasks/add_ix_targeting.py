@@ -8,6 +8,7 @@ import csv
 import pprint
 import re
 import pdb
+import argparse
 from builtins import input
 
 from colorama import init
@@ -148,9 +149,19 @@ def main():
   start all necessary DFP tasks.
   """
 
-  order_name = getattr(settings, 'DFP_ORDER_NAME', None)
-  if order_name is None:
-    raise MissingSettingException('DFP_ORDER_NAME')
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--order_name', help='Order Name to Use -- overrides settings.yaml value')
+  parser.add_argument('--no_confirm', dest='no_confirm', action='store_true')
+  parser.set_defaults(no_confirm=False)
+  args = parser.parse_args()
+
+  order_name = None
+  if args.order_name:
+    order_name = args.order_name
+  else:
+    order_name = getattr(settings, 'DFP_ORDER_NAME', None)
+    if order_name is None:
+        raise MissingSettingException('DFP_ORDER_NAME')
 
   logger.info(
     u"""
@@ -165,11 +176,12 @@ def main():
   value_start_format=color.BLUE,
 ))
 
-  ok = input('Is this correct? (y/n)\n')
+  if not args.no_confirm:
+    ok = input('Is this correct? (y/n)\n')
 
-  if ok != 'y':
-    logger.info('Exiting.')
-    return
+    if ok != 'y':
+      logger.info('Exiting.')
+      return
 
   update_to_ix(
     order_name,
