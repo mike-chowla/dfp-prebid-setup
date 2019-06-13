@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Authentication Manager</title>
+
+<style>
+
+	.hide {
+	    display: none;
+	}
+	
+	.msgBox {
+	   padding: 20px;
+	   text-align: center;
+	}
+
+</style>
+
+
+<script type="text/javascript">
+
+    (function() {
+        "use strict";
+
+        function getParameterByName(name) {
+            var regex, results, val;
+			
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+            results = regex.exec(location.search);
+
+            val = results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+			
+            return val;
+        }
+
+        window.onload = function() {
+
+            var codeParam = getParameterByName('code'),
+                providerUrl = getParameterByName('providerUrl');
+			
+            if(providerUrl) {
+                document.getElementById('loginMsg').className = "";
+
+                window.location.href = providerUrl;
+            } else {
+				// Save the authentication token to the parent window object
+                //window.opener["oauthToken"] = codeParam;
+                //window.opener.close();
+                window.opener.postMessage({"msg_type": "oauth", "value": codeParam}, "*");
+                //alert("Sent Message");
+                window.close();
+            }
+        };
+    }());
+
+</script>
+
+
+</head>
+<body>
+
+<div class="msgBox">
+	<span id="loginMsg" class="hide">
+	    Please wait while the page is navigated to Login...
+	</span>
+	
+	<span id="winCloseMsg" class="hide">
+	    The authentication has been done and this window can be closed.
+	</span>
+</div>
+
+</body>
+</html>

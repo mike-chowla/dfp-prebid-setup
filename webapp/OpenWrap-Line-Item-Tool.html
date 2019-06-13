@@ -1,0 +1,88 @@
+<html>
+
+<body>
+
+    <h1>OpenWrap Line Item Tool</h1>
+
+    <script>
+        
+        function receiveMessage(event)
+        {   //alert(event);
+            if (event.origin !== "http://mike.pubmatic.com")
+                return;
+            
+            if (event.data.msg_type === 'oauth') {
+                document.getElementById("DFP_OAUTH_AUTH_CODE").value = event.data.value;
+                document.getElementById('msg').style.color= "green";
+				document.getElementById('msg').innerHTML = '  Access Token generated successfully.'
+            }            
+        }
+        window.addEventListener("message", receiveMessage, false);
+        
+        function handleOauth() {
+
+            document.getElementById('msg').innerHTML = ' ';
+            var gmailId = document.getElementById('email').value;
+            var networkId = document.getElementById('networkid').value;
+            if (gmailId === "" || networkId === "") {
+                document.getElementById('msg').style.color = "red";
+                document.getElementById('msg').innerHTML = 'Please insert Email Id and Network Id.';
+            } else {
+                //gmailUrl = "https://accounts.google.com/o/oauth2/auth?client_id=99790798181-juaq82fvlpj46s0t4nbouog8820c0k9c.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Fmike.pubmatic.com%2FOpenWrapLineItems%2FoauthTokenManager.html&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdfp&access_type=offline&response_type=code&prompt=consent"; 
+                gmailUrl = "https://accounts.google.com/o/oauth2/auth?client_id=99790798181-juaq82fvlpj46s0t4nbouog8820c0k9c.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Fmike.pubmatic.com%2FOpenWrapLineItems%2FoauthTokenManager.html&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdfp&access_type=offline&response_type=code&prompt=consent";
+                googleLogin(gmailUrl, gmailId);
+            }
+        }
+
+        function googleLogin(gmailUrl, gmailId) {
+            var winRef,
+                winUrl = gmailUrl + "&login_hint=" + gmailId,
+                winOptions = "height=400,width=700,resizable=1,status=0,toolbar=0,menubar=0,location=0,scrollbars=1,titlebar=0,directories=0";
+
+            document.getElementById("DFP_OAUTH_AUTH_CODE").value = "";
+            document.getElementById("DFP_NETWORK_CODE").value = document.getElementById('networkid').value;
+            winRef = window.open(winUrl, "Token_Manager", winOptions);
+            window.close();
+        }
+    </script>
+
+    <table>
+        <tr>
+            <td>Network Id </td>
+            <td><input type="text" name="networkid" id="networkid" class="textbox" /></td>
+        </tr>
+        <tr>
+            <td>Email Id </td>
+            <td><input type="text" name="email" id="email" class="textbox" /></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="button" value="Request Access" onclick="handleOauth();" class="button" />
+                <font color="green"><label id="msg" value=" "></label>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+    
+    <h2>Setup</h2>
+        <form action="executeTool.cgi" method="post" onsubmit="return true" enctype="multipart/form-data">
+            <input type="hidden" name="DFP_NETWORK_CODE" id="DFP_NETWORK_CODE">
+            <input type="hidden" name="DFP_OAUTH_AUTH_CODE" id="DFP_OAUTH_AUTH_CODE">
+            <div>
+                <select name="task">
+                    <option value="get_orders">Get Orders</option>
+                    <option value="ow_line_items">Add OpenWrap Line Items</option>
+                </select>
+            </div>
+            <div>
+             <label for="file">YAML Config File</label>
+							<input type="file" name="file" id="file" >
+            </div>
+        <input type="submit" name="submit" value="Execute" class="button" onclick="popit=false"/>        
+        </form>
+</body>
+
+</html>
