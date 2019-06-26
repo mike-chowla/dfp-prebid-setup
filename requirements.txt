@@ -4,3 +4,4 @@ googleads==15.0.1
 mock==2.0.0
 pycryptodome==3.7.2
 PyYAML==4.2b4
+oauth2client==1.5.2
