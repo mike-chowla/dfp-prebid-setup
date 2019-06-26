@@ -112,9 +112,12 @@ def main():
   parser.set_defaults(no_confirm=False)
   args = parser.parse_args()
 
-  order_name = getattr(settings, 'DFP_ORDER_NAME', None)
-  if order_name is None:
-    raise MissingSettingException('DFP_ORDER_NAME')
+  if args.order_name:
+    order_name = args.order_name
+  else: 
+    order_name = getattr(settings, 'DFP_ORDER_NAME', None)
+    if order_name is None:
+      raise MissingSettingException('DFP_ORDER_NAME')
     
   logger.info(
     u"""
@@ -129,7 +132,10 @@ def main():
     value_start_format=color.BLUE,
   ))
 
-  ok = input('Is this correct? (y/n)\n')
+  if args.no_confirm:
+    ok = 'y'
+  else:
+    ok = input('Is this correct? (y/n)\n')
 
   if ok != 'y':
     logger.info('Exiting.')
