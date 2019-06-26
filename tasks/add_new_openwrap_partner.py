@@ -695,8 +695,8 @@ def main():
          if ct[1] != "IS" and ct[1] != "IS_NOT":
              raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
 
-         if not isinstance(ct[2], (list, tuple, str)):
-             raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
+         if not isinstance(ct[2], (list, tuple, str, bool)):
+             raise BadSettingException('OPENWRAP_CUSTOM_TARGETING - {0}'.format(type(ct[2])))
 
   price_buckets_csv = get_setting(settings, 'OPENWRAP_BUCKET_CSV', None)
   if price_buckets_csv is None:
