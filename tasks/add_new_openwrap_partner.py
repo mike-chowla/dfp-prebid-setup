@@ -522,23 +522,33 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
     else:
         return round((start_rate_range + end_rate_range) / 2.0, 3)
 
+def load_prices_from_yaml(buckets):
+    import pdb
+    #pdb.set_trace()
+    return process_ow_price_buckets(buckets, False)
 
 def load_price_csv_from_file(filename):
     with open(filename, 'r') as csvfile:
         return load_price_csv_from_stream(csvfile)
-        
+
 def load_price_csv_from_stream(csvfile):
-    buckets = []
     preader = csv.reader(csvfile)
     next(preader)  # skip header row
-    for row in preader:
+    return process_ow_price_buckets(preader, True)
+    
+def process_ow_price_buckets(input_buckets, from_csv_file):
+    buckets = []
+    for row in input_buckets:
         print(row)
-        order_name = row[0]
-        advertiser = row[1]
-        start_range = float(row[2])
-        end_range = float(row[3])
-        granularity = row[4]
-        rate_id = int(row[5])
+        
+        if from_csv_file:
+            order_name = row.pop(0)
+            advertiser = row.pop(0)
+            
+        start_range = float(row.pop(0))
+        end_range = float(row.pop(0))
+        granularity = row.pop(0)
+        rate_id = int(row.pop(0))    
 
         if granularity != "-1":
             granularity = float(granularity)
@@ -702,12 +712,15 @@ def run(settings, csv_file_stream=None, no_confirm=False):
          if not isinstance(ct[2], (list, tuple, str)):
              raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
 
-  if csv_file_stream != None:
+  ow_price_buckets = get_setting(settings, 'OPENWRAP_PRICE_BUCKETS', None)
+  if ow_price_buckets != None:
+    prices = load_prices_from_yaml(ow_price_buckets)    
+  elif csv_file_stream != None:
     prices = load_price_csv_from_stream(csv_file_stream)
   else:
     price_buckets_csv = get_setting(settings, 'OPENWRAP_BUCKET_CSV', None)
     if price_buckets_csv is None:
-        raise MissingSettingException('OPENWRAP_BUCKET_CSV')
+        raise MissingSettingException('No Price Buckets - Set OPENWRAP_PRICE_BUCKETS or OPENWRAP_BUCKET_CSV')
 
     prices = load_price_csv_from_file(price_buckets_csv)
 

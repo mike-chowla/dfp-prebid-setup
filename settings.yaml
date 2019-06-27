@@ -1,25 +1,133 @@
+# A string describing the order
+DFP_ORDER_NAME: OW-Test-Yaml-Custom-Targeting
+
+# The email of the DFP user who will be the trafficker for
+# the created order
+DFP_USER_EMAIL_ADDRESS: mike.chowla@gmail.com
+
+# The exact name of the DFP advertiser for the created order
 DFP_ADVERTISER_NAME: PubMatic
-DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST: false
-DFP_DEVICE_CATEGORIES:
-- Feature Phone
-- Smartphone
-DFP_ORDER_NAME: OW-Param-Rename-2
+
+# Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
+#   what type advertisers are looked up and created with
+DFP_ADVERTISER_TYPE: ADVERTISER
+
+# Names of placements the line items should target.
+#  Leave empty for Run of Network (requires Network permission)
+DFP_TARGETED_PLACEMENT_NAMES: []
+ 
+# Sizes of placements. These are used to set line item and creative sizes.
 DFP_PLACEMENT_SIZES:
 - height: '250'
   width: '300'
 - height: '90'
   width: '728'
-DFP_ROADBLOCK_TYPE: AS_MANY_AS_POSSIBLE
-DFP_SAME_ADV_EXCEPTION: true
-DFP_TARGETED_PLACEMENT_NAMES: []
-DFP_USER_EMAIL_ADDRESS: mike.chowla@gmail.com
+
+# Whether we should create the advertiser in DFP if it does not exist.
+# If False, the program will exit rather than create an advertiser.
+DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST: false
+
+# If settings.DFP_ORDER_NAME is the same as an existing order, add the created
+# line items to that order. If False, the program will exit rather than
+# modify an existing order.
 DFP_USE_EXISTING_ORDER_IF_EXISTS: true
+
+# Optional
+# Each line item should have at least as many creatives as the number of
+# ad units you serve on a single page because DFP specifies:
+#   "Each of a line item's assigned creatives can only serve once per page,
+#    so if you want the same creative to appear more than once per page,
+#    copy the creative to associate multiple instances of the same creative."
+# https://support.google.com/dfp_sb/answer/82245?hl=en
+#
+# This will default to the number of placements specified in
+# `DFP_TARGETED_PLACEMENT_NAMES`.
+#DFP_NUM_CREATIVES_PER_LINE_ITEM: 2
+
+# Optional
+# The currency to use in DFP when setting line item CPMs. Defaults to 'USD'.
+#DFP_CURRENCY_CODE: USD
+
+# Optional
+# Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
+#   Currently only works for OpenWrap
+DFP_SAME_ADV_EXCEPTION: true
+
+# Optional
+# Device Category Targeting
+#    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
+#    Defaults to no device category targeting
+#    Currently supported for OpenWrap Only
+DFP_DEVICE_CATEGORIES:
+- Feature Phone
+- Smartphone
+
+# Optional
+# DFP Roadblock Type
+#    Valid Values: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'
+#    Defaults to 'ONE_OR_MORE'
+#    Currently supported for OpenWrap Only
+DFP_ROADBLOCK_TYPE: AS_MANY_AS_POSSIBLE
+
+# Required for command-line invocation
 GOOGLEADS_YAML_FILE: /Users/mike.chowla/src/dfp-prebid-setup/googleads.yaml
-OPENWRAP_BUCKET_CSV: TestLineItems.csv
+
+# OpenWrap Creative Type
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"
+#  Defaults to WEB
 OPENWRAP_CREATIVE_TYPE: UNIVERSAL
+
+# OpenWrap: you can specify an array to target multiple bidders
+#  with one line item.  Use empty array for no partner targeting
+# PREBID_BIDDER_CODE = ["pubmatic", "conversant"]
+#
+# Prebid line item generator only accepts (and requires) a single value
 PREBID_BIDDER_CODE: pubmatic
-PREBID_PRICE_BUCKETS:
-  increment: 0.1
-  max: 20
-  min: 0
-  precision: 2
+
+# Optional
+#OPENWRAP_CUSTOM_TARGETING:
+#- - a
+#  - IS
+#  - - '1'
+#    - '2'
+#    - '3'
+#- - b
+#  - IS_NOT
+#  - - '4'
+#    - '5'
+#    - '6'
+
+#PREBID_PRICE_BUCKETS:
+#  increment: 0.1
+#  max: 20
+#  min: 0
+#  precision: 2
+
+# OpenWrap only
+#   CVS file for specifying buckets from old line item tool
+#     Order Name & Advertiser in csv file ignored
+#     Only used if OPENWRAP_PRICE_BUCKETS not defined
+#OPENWRAP_BUCKET_CSV: TestLineItems.csv
+
+# OPENWRAP_PRICE_BUCKETS
+#  This is an array of arrays
+#
+# Schema:
+#- - start_range
+#  - end_range
+#  - granularity
+#  - 'rate_id[1=Average, 2=Minimum] '
+#OPENWRAP_PRICE_BUCKETS:
+#- - 0.01
+#  - 20
+#  - 0.05
+#  - 1
+#- - 20
+#  - 50
+#  - 1
+#  - 1
+OPENWRAP_PRICE_BUCKETS:
+- - '0.01'
+  - '5.00'
+  - '0.50'
+  - '1'
