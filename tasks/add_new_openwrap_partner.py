@@ -523,43 +523,46 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
         return round((start_rate_range + end_rate_range) / 2.0, 3)
 
 
-def load_price_csv(filename):
-    buckets = []
+def load_price_csv_from_file(filename):
     with open(filename, 'r') as csvfile:
-        preader = csv.reader(csvfile)
-        next(preader)  # skip header row
-        for row in preader:
-                print(row)
-                order_name = row[0]
-                advertiser = row[1]
-                start_range = float(row[2])
-                end_range = float(row[3])
-                granularity = row[4]
-                rate_id = int(row[5])
+        return load_price_csv_from_stream(csvfile)
+        
+def load_price_csv_from_stream(csvfile):
+    buckets = []
+    preader = csv.reader(csvfile)
+    next(preader)  # skip header row
+    for row in preader:
+        print(row)
+        order_name = row[0]
+        advertiser = row[1]
+        start_range = float(row[2])
+        end_range = float(row[3])
+        granularity = row[4]
+        rate_id = int(row[5])
 
-                if granularity != "-1":
-                    granularity = float(granularity)
-                    i = start_range
-                    while i < end_range:
-                        a = round(i + granularity,2)
-                        if a > end_range:
-                            a = end_range
+        if granularity != "-1":
+            granularity = float(granularity)
+            i = start_range
+            while i < end_range:
+                a = round(i + granularity,2)
+                if a > end_range:
+                    a = end_range
 
-                        if round(i,2) != (a,2):
-                             buckets.append({
-                                'start': i,
-                                'end': a,
-                                'granularity': granularity,
-                                'rate': get_calculated_rate(i, a, rate_id)
-                             })
-                        i = a
-                else:
-                     buckets.append({
-                        'start': start_range,
-                        'end': end_range,
-                        'granularity': 1.0,
+                if round(i,2) != (a,2):
+                    buckets.append({
+                        'start': i,
+                        'end': a,
+                        'granularity': granularity,
                         'rate': get_calculated_rate(i, a, rate_id)
-                     })
+                        })
+                i = a
+        else:
+            buckets.append({
+                'start': start_range,
+                'end': end_range,
+                'granularity': 1.0,
+                'rate': get_calculated_rate(i, a, rate_id)
+                })
 
     return buckets
 
@@ -613,10 +616,11 @@ def main():
     with open(args.generate_yaml, 'w') as outfile:
         dump(settings_dict, outfile, default_flow_style=False)
         return
+    
+  run(settings)
 
-  print (type(settings))
-  print (settings)
 
+def run(settings, csv_file_stream=None, no_confirm=False):
   user_email = get_setting(settings, 'DFP_USER_EMAIL_ADDRESS', None)
   if user_email is None:
     raise MissingSettingException('DFP_USER_EMAIL_ADDRESS')
@@ -698,11 +702,14 @@ def main():
          if not isinstance(ct[2], (list, tuple, str)):
              raise BadSettingException('OPENWRAP_CUSTOM_TARGETING')
 
-  price_buckets_csv = get_setting(settings, 'OPENWRAP_BUCKET_CSV', None)
-  if price_buckets_csv is None:
-    raise MissingSettingException('OPENWRAP_BUCKET_CSV')
+  if csv_file_stream != None:
+    prices = load_price_csv_from_stream(csv_file_stream)
+  else:
+    price_buckets_csv = get_setting(settings, 'OPENWRAP_BUCKET_CSV', None)
+    if price_buckets_csv is None:
+        raise MissingSettingException('OPENWRAP_BUCKET_CSV')
 
-  prices = load_price_csv(price_buckets_csv)
+    prices = load_price_csv_from_file(price_buckets_csv)
 
   prices_summary = []
   for p in prices:
@@ -745,11 +752,12 @@ def main():
       value_start_format=color.BLUE,
     ))
 
-  ok = input('Is this correct? (y/n)\n')
+  if no_confirm != True:
+    ok = input('Is this correct? (y/n)\n')
 
-  if ok != 'y':
-    logger.info('Exiting.')
-    return
+    if ok != 'y':
+        logger.info('Exiting.')
+        return
 
   setup_partner(
     user_email,
