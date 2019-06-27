@@ -47,7 +47,6 @@ if auth_success:
       yaml_fileitem = form['yaml_config_file']
       csv_fileitem = form['price_buckets_csv']
     
-      print(csv_fileitem)
       if csv_fileitem != None and csv_fileitem.filename:
           csv_bytes = csv_fileitem.file.read()
           csv_string = csv_bytes.decode()
