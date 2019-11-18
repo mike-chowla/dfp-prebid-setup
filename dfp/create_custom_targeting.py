@@ -47,7 +47,7 @@ def create_targeting_key(name, display_name=None, key_type='FREEFORM'):
 
   return key['id']
 
-def create_targeting_value(name, key_id):
+def create_targeting_value(name, key_id, match_type='EXACT'):
   """
   Creates a custom targeting value for a specific key in DFP.
 
@@ -67,7 +67,7 @@ def create_targeting_value(name, key_id):
       'customTargetingKeyId': key_id,
       'displayName': str(name),
       'name': str(name),
-      'matchType': 'EXACT'
+      'matchType': match_type
     }
   ]
 

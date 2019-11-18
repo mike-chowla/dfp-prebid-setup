@@ -72,7 +72,7 @@ def get_all_orders(print_orders=False):
     response = order_service.getOrdersByStatement(statement.ToStatement())
     if 'results' in response and len(response['results']) > 0:
       for order in response['results']:
-        msg = u'Found an order with name "{name}".'.format(name=order['name'])
+        msg = u'Found an order with name "{name}"  id({id}).'.format(name=order['name'],id=order['id'])
         if print_orders:
           print(msg)
       statement.offset += ad_manager.SUGGESTED_PAGE_LIMIT
