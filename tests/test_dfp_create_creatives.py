@@ -53,8 +53,8 @@ class DFPCreateCreativesTests(TestCase):
         'isSafeFrameCompatible': False,
         'name': 'My Creative',
         'size': {
-          'height': '1',
-          'width': '1'
+          'height': 1,
+          'width': 1
         },
         'snippet': snippet,
         'xsi_type': 'ThirdPartyCreative'
@@ -144,7 +144,7 @@ class DFPCreateCreativesTests(TestCase):
     creative_num = 4
 
     configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_code, order_name, advertiser_id, creative_num)
+      bidder_code, order_name, advertiser_id, num_creatives=creative_num)
 
     # Assert we created the correct number of configs.
     self.assertEqual(mock_create_creative_config.call_count, creative_num)

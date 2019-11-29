@@ -24,7 +24,7 @@ def create_line_items(line_items):
 
 
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
-                            currency_code='USD', same_adv_exception=False, device_categories=None,
+                            lineItemType='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
                             roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
@@ -38,9 +38,12 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
       line item
     sizes (arr): an array of objects, each containing 'width' and 'height'
       keys, to set the creative sizes this line item will serve
-    hb_bidder_key_id (int): the DFP ID of the `hb_bidder` targeting key
-    hb_pb_key_id (int): the DFP ID of the `hb_pb` targeting key
+    key_gen_obj (obj): targeting key gen object
+    lineItemType (str): the type of line item('PRICE_PRIORTY', 'HOUSE' or 'NETWORK')
     currency_code (str): the currency code (e.g. 'USD' or 'EUR')
+    same_adv_exception (bool) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#disablesameadvertisercompetitiveexclusion
+    roadblock_type (str) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#roadblockingtype
+ 
   Returns:
     an object: the line item config
   """
@@ -66,7 +69,7 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     },
     'startDateTimeType': 'IMMEDIATELY',
     'unlimitedEndDateTime': True,
-    'lineItemType': 'PRICE_PRIORITY',
+    'lineItemType': lineItemType,
     'costType': 'CPM',
     'costPerUnit': {
       'currencyCode': currency_code,
@@ -80,6 +83,11 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     'creativePlaceholders': creative_placeholders,
     'disableSameAdvertiserCompetitiveExclusion': same_adv_exception
   }
+
+  #for network and house line-items, set goal type and units
+  if lineItemType in ('NETWORK','HOUSE'):
+    line_item_config['primaryGoal']['goalType'] = 'DAILY'
+    line_item_config['primaryGoal']['units'] = 100
 
   if device_categories != None and len(device_categories) > 0:
       dev_cat_targeting = []

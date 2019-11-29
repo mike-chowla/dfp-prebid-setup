@@ -17,7 +17,6 @@ import dfp.create_custom_targeting
 import dfp.create_creatives
 import dfp.create_line_items
 import dfp.create_orders
-import dfp.get_ad_units
 import dfp.get_advertisers
 import dfp.get_custom_targeting
 import dfp.get_placements
@@ -351,7 +350,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, advertiser_type, order_name, placements,
-    sizes, bidder_code, prices, creative_type, num_creatives, currency_code,
+     sizes, lineitem_type, bidder_code, prices, creative_type, num_creatives, currency_code,
     custom_targeting, same_adv_exception, device_categories, roadblock_type):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
@@ -393,15 +392,32 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   order_id = dfp.create_orders.create_order(order_name, advertiser_id, user_id)
 
   # Create creatives.
-  logger.info("creating creative_configs")
+
+  #if bidder is None, then bidder will be 'All'
+  #
+  bidder_str = bidder_code
+  if bidder_str == None:
+      bidder_str = "All"
+  elif isinstance(bidder_str, (list, tuple)):
+      bidder_str = "_".join(bidder_str)
+
+  #based on the platform, choose creative file  
+  creative_file = "creative_snippet_openwrap.html"
+  use_safe_frame = False
+  if creative_type == "WEB":
+    creative_file = "creative_snippet_openwrap.html"
+  elif creative_type == "WEB_SAFEFRAME":
+    creative_file = "creative_snippet_openwrap_sf.html"
+    use_safe_frame = True
+
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_code, order_name, advertiser_id, num_creatives)
+      bidder_str, order_name, advertiser_id, sizes, num_creatives, creative_file=creative_file, safe_frame=use_safe_frame)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
   logger.info("creating line_items_config...")
   line_items_config = create_line_item_configs(prices, order_id,
-    placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
+    placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(), lineitem_type,
     currency_code, custom_targeting, creative_type, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
     device_category_ids=device_category_ids, roadblock_type=roadblock_type)
     
@@ -423,7 +439,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   """)
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, currency_code, custom_targeting, creative_type,
+  sizes, key_gen_obj, lineItemType, currency_code, custom_targeting, creative_type,
   ad_unit_ids=None, same_adv_exception=False, device_category_ids=None,
   roadblock_type='ONE_OR_MORE'):
   """
@@ -436,6 +452,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     bidder_code (str or arr)
     sizes (arr)
     key_gen_obj (obj)
+    lineItemType (str)
     currency_code (str)
     custom_targeting (arr)
     creative_type (str)
@@ -483,6 +500,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       cpm_micro_amount=num_to_micro_amount(price['rate']),
       sizes=sizes,
       key_gen_obj=key_gen_obj,
+      lineItemType=lineItemType,
       currency_code=currency_code,
       ad_unit_ids=ad_unit_ids,
       same_adv_exception=same_adv_exception,
@@ -493,42 +511,6 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     line_items_config.append(config)
 
   return line_items_config
-
-def check_price_buckets_validity(price_buckets):
-  """
-  Validate that the price_buckets object contains all required keys and the
-  values are the expected types.
-
-  Args:
-    price_buckets (object)
-  Returns:
-    None
-  """
-
-  try:
-    pb_precision = price_buckets['precision']
-    pb_min = price_buckets['min']
-    pb_max = price_buckets['max']
-    pb_increment = price_buckets['increment']
-  except KeyError:
-    raise BadSettingException('The setting "PREBID_PRICE_BUCKETS" '
-      'must contain keys "precision", "min", "max", and "increment".')
-  
-  if not (isinstance(pb_precision, int) or isinstance(pb_precision, float)):
-    raise BadSettingException('The "precision" key in "PREBID_PRICE_BUCKETS" '
-      'must be a number.')
-
-  if not (isinstance(pb_min, int) or isinstance(pb_min, float)):
-    raise BadSettingException('The "min" key in "PREBID_PRICE_BUCKETS" '
-      'must be a number.')
-
-  if not (isinstance(pb_max, int) or isinstance(pb_max, float)):
-    raise BadSettingException('The "max" key in "PREBID_PRICE_BUCKETS" '
-      'must be a number.')
-
-  if not (isinstance(pb_increment, int) or isinstance(pb_increment, float)):
-    raise BadSettingException('The "increment" key in "PREBID_PRICE_BUCKETS" '
-      'must be a number.')
 
 def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
 
@@ -615,9 +597,12 @@ def main():
   if order_name is None:
     raise MissingSettingException('DFP_ORDER_NAME')
 
+  lineitem_type = getattr(settings, 'DFP_LINEITEM_TYPE', None)
+  if lineitem_type is None:
+    raise MissingSettingException('DFP_LINEITEM_TYPE')
+
   num_placements = 0
   placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
-  ad_units = getattr(settings, 'DFP_TARGETED_AD_UNIT_NAMES', None)
   if placements is None:
     placements = []
 
@@ -698,13 +683,13 @@ def main():
       {name_start_format}Order{format_end}: {value_start_format}{order_name}{format_end}
       {name_start_format}Advertiser{format_end}: {value_start_format}{advertiser}{format_end}
       {name_start_format}Advertiser Type{format_end}: {value_start_format}{advertiser_type}{format_end}
+      {name_start_format}LineItem Type{format_end}: {value_start_format}{lineitem_type}{format_end}
 
     Line items will have targeting:
-      {name_start_format}hb_pb{format_end} = {value_start_format}{prices_summary}{format_end}
-      {name_start_format}hb_bidder{format_end} = {value_start_format}{bidder_code}{format_end}
+      {name_start_format}rates{format_end} = {value_start_format}{prices_summary}{format_end}
+      {name_start_format}bidders{format_end} = {value_start_format}{bidder_code}{format_end}
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
-      {name_start_format}ad units{format_end} = {value_start_format}{ad_units}{format_end}
-      {name_start_format}creative_type{format_end} = {value_start_format}{creative_type}{format_end}
+      {name_start_format}creative type{format_end} = {value_start_format}{creative_type}{format_end}
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
       {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
       {name_start_format}device categories{format_end} = {value_start_format}{device_categories}{format_end}
@@ -714,11 +699,11 @@ def main():
       order_name=order_name,
       advertiser=advertiser_name,
       advertiser_type=advertiser_type,
+      lineitem_type=lineitem_type,
       user_email=user_email,
       prices_summary=prices_summary,
       bidder_code=bidder_code,
       placements=placements,
-      ad_units=ad_units,
       creative_type=creative_type,
       sizes=sizes,
       custom_targeting=custom_targeting,
@@ -743,6 +728,7 @@ def main():
     order_name,
     placements,
     sizes,
+    lineitem_type,
     bidder_code,
     prices,
     creative_type,

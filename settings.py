@@ -23,8 +23,12 @@ DFP_ADVERTISER_NAME = None
 #   Defaults to "AD_NETWORK"
 DFP_ADVERTISER_TYPE = "AD_NETWORK"
 
+# Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
+# This option is only for openwrap
+DFP_LINEITEM_TYPE= "HOUSE"
+
 # Names of placements the line items should target.
-#  Leave empty for Run of Network (requires Network permission)
+# For Openwrap Leave empty for Run of Network (requires Network permission)
 DFP_TARGETED_PLACEMENT_NAMES = []
 
 # Names of ad units the line items should target.
@@ -49,7 +53,7 @@ DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST = False
 # If settings.DFP_ORDER_NAME is the same as an existing order, add the created 
 # line items to that order. If False, the program will exit rather than
 # modify an existing order.
-DFP_USE_EXISTING_ORDER_IF_EXISTS = False
+DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 
 # Optional
 # Each line item should have at least as many creatives as the number of 
@@ -110,7 +114,7 @@ PREBID_PRICE_BUCKETS = {
 
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool
-OPENWRAP_BUCKET_CSV = 'TestLineItems.csv'
+OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 
 # OpenWrap: Set custom line item targeting values
 #OPENWRAP_CUSTOM_TARGETING = [
