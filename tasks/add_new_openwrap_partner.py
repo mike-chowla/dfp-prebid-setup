@@ -531,7 +531,7 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id, exchange_rate
 
 def get_dfp_network():
     dfp_client = get_client()
-    network_service = dfp_client.GetService('NetworkService', version='v201811')
+    network_service = dfp_client.GetService('NetworkService', version='v201908')
     current_network = network_service.getCurrentNetwork()
     return current_network
     
