@@ -127,6 +127,10 @@ OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 
+#Openwrap currency conversion
+#This option if set, will convert rate to network's currency, default value is false
+CURRENCY_EXCHANGE = False
+
 #########################################################################
 
 # Try importing local settings, which will take precedence.

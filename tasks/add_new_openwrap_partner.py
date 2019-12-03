@@ -40,6 +40,12 @@ from tasks.dfp_utils import (
   get_or_create_dfp_targeting_key
 )
 
+from urllib.request import urlopen
+import json
+
+from dfp.client import get_client
+
+
 # Colorama for cross-platform support for colored logging.
 # https://github.com/kmjennison/dfp-prebid-setup/issues/9
 init()
@@ -512,19 +518,44 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
 
   return line_items_config
 
-def get_calculated_rate(start_rate_range, end_rate_range, rate_id):
+def get_calculated_rate(start_rate_range, end_rate_range, rate_id, exchange_rate):
 
     if(start_rate_range == 0 and rate_id == 2):
         rate_id = 1
 
     if rate_id == 2:
-        return start_rate_range
+        return round(start_rate_range * exchange_rate, 3)
     else:
-        return round((start_rate_range + end_rate_range) / 2.0, 3)
+        return round(((start_rate_range + end_rate_range) / 2.0) * exchange_rate, 3)
 
+
+def get_dfp_network():
+    dfp_client = get_client()
+    network_service = dfp_client.GetService('NetworkService', version='v201811')
+    current_network = network_service.getCurrentNetwork()
+    return current_network
+    
+def get_exchange_rate(currency_code):
+    #currency_code = 'GBP'
+    url = "http://apilayer.net/api/live?access_key=f7603d1bd4e44ba7242dc80858b93d8c&source=USD&currencies=" + currency_code +"&format=1"
+    response = urlopen(url)
+    string = response.read().decode('utf-8')
+    json_obj = json.loads(string)
+    return float(json_obj['quotes']['USD' + currency_code])
+    
 
 def load_price_csv(filename):
     buckets = []
+    exchange_rate = 1
+    #read currency conversion flag
+    currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', False)
+    if currency_exchange:
+        network = get_dfp_network()
+        print("network currency :", network.currencyCode)
+        exchange_rate = get_exchange_rate(network.currencyCode)
+        
+    print("currency exchange rate:", exchange_rate)    
+    #currency rate handling till here
     with open(filename, 'r') as csvfile:
         preader = csv.reader(csvfile)
         next(preader)  # skip header row
@@ -550,7 +581,7 @@ def load_price_csv(filename):
                                 'start': i,
                                 'end': a,
                                 'granularity': granularity,
-                                'rate': get_calculated_rate(i, a, rate_id)
+                                'rate': get_calculated_rate(i, a, rate_id, exchange_rate)
                              })
                         i = a
                 else:
@@ -558,7 +589,7 @@ def load_price_csv(filename):
                         'start': start_range,
                         'end': end_range,
                         'granularity': 1.0,
-                        'rate': get_calculated_rate(start_range, end_range, rate_id)
+                        'rate': get_calculated_rate(start_range, end_range, rate_id, exchange_rate)
                      })
 
     return buckets
