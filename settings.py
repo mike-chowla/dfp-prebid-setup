@@ -16,7 +16,8 @@ DFP_ORDER_NAME = None
 DFP_USER_EMAIL_ADDRESS = None
 
 # The exact name of the DFP advertiser for the created order
-DFP_ADVERTISER_NAME = None
+# set 'PubMatic' for openwrap Line items
+DFP_ADVERTISER_NAME = 'PubMatic'
 
 # Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
 #   what type advertisers are looked up and created with.
@@ -25,7 +26,7 @@ DFP_ADVERTISER_TYPE = "AD_NETWORK"
 
 # Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
 # This option is only for openwrap
-DFP_LINEITEM_TYPE= "HOUSE"
+DFP_LINEITEM_TYPE= "PRICE_PRIORITY"
 
 # Names of placements the line items should target.
 # For Openwrap Leave empty for Run of Network (requires Network permission)
@@ -116,6 +117,7 @@ PREBID_PRICE_BUCKETS = {
 #   Same file format as the PubMatic Line Item tool
 OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 
+# Optional
 # OpenWrap: Set custom line item targeting values
 #OPENWRAP_CUSTOM_TARGETING = [
 #    ("a", "IS", ("1", "2", "3")),
@@ -127,9 +129,11 @@ OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 
-#Openwrap currency conversion
-#This option if set, will convert rate to network's currency, default value is false
-CURRENCY_EXCHANGE = False
+# Optional
+# Openwrap currency conversion
+# This option if set, will convert rate to network's currency, default value is false
+# This flag is currently applicable for web only
+#CURRENCY_EXCHANGE = True
 
 #########################################################################
 

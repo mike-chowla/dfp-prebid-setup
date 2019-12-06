@@ -376,8 +376,9 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
       ad_unit_ids = [ root_id ]
 
   # Get the device category IDs
+  # Dont get device categories for in-app platform
   device_category_ids = None
-  if device_categories != None:
+  if device_categories != None and creative_type != "IN_APP":
       device_category_ids = []
       if isinstance(device_categories, str):
           device_categories = (device_categories)
@@ -388,7 +389,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
           if dc in dc_map:
               device_category_ids.append(dc_map[dc])
           else:
-              raise BadSettingException("Invalid Device Cagetory: " . dc)
+              raise BadSettingException("Invalid Device Cagetory: {} ".format(dc))
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
@@ -407,13 +408,11 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   elif isinstance(bidder_str, (list, tuple)):
       bidder_str = "_".join(bidder_str)
 
-  #based on the platform, choose creative file  
-  creative_file = "creative_snippet_openwrap.html"
+  #based on the platform, choose creative file 
+  creative_file = get_creative_file(creative_type) 
+ 
   use_safe_frame = False
-  if creative_type == "WEB":
-    creative_file = "creative_snippet_openwrap.html"
-  elif creative_type == "WEB_SAFEFRAME":
-    creative_file = "creative_snippet_openwrap_sf.html"
+  if creative_type == "WEB_SAFEFRAME":
     use_safe_frame = True
 
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
@@ -443,6 +442,19 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
     Happy bidding!
 
   """)
+
+def get_creative_file(creative_type):
+    creative_file = "creative_snippet_openwrap.html"
+    if creative_type == "WEB":
+        creative_file = "creative_snippet_openwrap.html"
+    elif creative_type == "WEB_SAFEFRAME":
+        creative_file = "creative_snippet_openwrap_sf.html"
+    elif creative_type == "AMP":
+        creative_file = "creative_snippet_openwrap_amp.html"
+    elif creative_type == "IN_APP":
+        creative_file = "creative_snippet_openwrap_in_app.html"
+
+    return creative_file
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   sizes, key_gen_obj, lineItemType, currency_code, custom_targeting, creative_type,
@@ -544,12 +556,14 @@ def get_exchange_rate(currency_code):
     return float(json_obj['quotes']['USD' + currency_code])
     
 
-def load_price_csv(filename):
+def load_price_csv(filename, creative_type):
     buckets = []
     exchange_rate = 1
     #read currency conversion flag
     currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', False)
-    if currency_exchange:
+
+    # we are not converting in case of AMP platform, add more platforms in condition if required
+    if creative_type != 'AMP' and currency_exchange:
         network = get_dfp_network()
         print("network currency :", network.currencyCode)
         exchange_rate = get_exchange_rate(network.currencyCode)
@@ -666,7 +680,7 @@ def main():
   elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"]:
     raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
 
-  bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
+  bidder_code = getattr(settings, 'BIDDER_CODE', None)
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
     raise BadSettingException('PREBID_BIDDER_CODE')
 
@@ -701,7 +715,7 @@ def main():
   if price_buckets_csv is None:
     raise MissingSettingException('OPENWRAP_BUCKET_CSV')
 
-  prices = load_price_csv(price_buckets_csv)
+  prices = load_price_csv(price_buckets_csv, creative_type)
 
   prices_summary = []
   for p in prices:
