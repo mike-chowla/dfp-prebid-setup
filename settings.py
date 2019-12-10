@@ -86,6 +86,10 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = False
 #    Currently supported for OpenWrap Only
 #DFP_ROADBLOCK_TYPE = 'AS_MANY_AS_POSSIBLE'
 
+# The format for line item name. Defaults to u'{bidder_code}: HB ${price}'.
+# This should be specified in python's format syntax.
+# DFP_LINE_ITEM_FORMAT = u'{bidder_code}: HB ${price:0>5}'
+
 #########################################################################
 # PREBID SETTINGS
 #########################################################################
