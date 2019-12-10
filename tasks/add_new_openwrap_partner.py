@@ -23,6 +23,8 @@ import dfp.get_placements
 import dfp.get_users
 import dfp.get_device_categories
 import dfp.get_root_ad_unit_id
+import dfp.get_network
+import dfp.get_device_capabilities
 from dfp.exceptions import (
   BadSettingException,
   MissingSettingException
@@ -204,14 +206,16 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
             'children': [pwt_bst_criteria]
         }
         #TODO: Change platform value according to the input platform
-        display_value_id = self.PltValueGetter.get_value_id("display")
-        platform_criteria = {
-            'xsi_type': 'CustomCriteria',
-            'keyId': self.pwtplt_key_id,
-            'valueIds': [display_value_id],
-            'operator': 'IS'
-        }
-        top_set['children'].append(platform_criteria)
+        if self.creative_type is not 'IN_APP':
+            display_value_id = self.PltValueGetter.get_value_id("display")
+            platform_criteria = {
+                'xsi_type': 'CustomCriteria',
+                'keyId': self.pwtplt_key_id,
+                'valueIds': [display_value_id],
+                'operator': 'IS'
+            }
+            top_set['children'].append(platform_criteria)
+
 
         if self.bidder_criteria:
             top_set['children'].append(self.bidder_criteria)
@@ -357,7 +361,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
 def setup_partner(user_email, advertiser_name, advertiser_type, order_name, placements,
      sizes, lineitem_type, bidder_code, prices, creative_type, num_creatives, currency_code,
-    custom_targeting, same_adv_exception, device_categories, roadblock_type):
+    custom_targeting, same_adv_exception, device_categories, device_capabilities, roadblock_type):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
   """
@@ -390,6 +394,23 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
               device_category_ids.append(dc_map[dc])
           else:
               raise BadSettingException("Invalid Device Cagetory: {} ".format(dc))
+ 
+ 
+  #get device capabilty ids fir in-APP platform         
+  device_capability_ids = None
+  if device_capabilities != None and creative_type is "IN_APP":
+      device_capability_ids = []
+      if isinstance(device_capabilities, str):
+          device_capabilities = (device_capabilities)
+
+      dc_map = dfp.get_device_capabilities.get_device_capabilities()
+
+      for dc in device_capabilities:
+          if dc in dc_map:
+              device_capability_ids.append(dc_map[dc])
+          else:
+              raise BadSettingException("Invalid Device Capability: {} ".format(dc))
+
 
   # Get (or potentially create) the advertiser.
   advertiser_id = dfp.get_advertisers.get_advertiser_id_by_name(
@@ -408,9 +429,9 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   elif isinstance(bidder_str, (list, tuple)):
       bidder_str = "_".join(bidder_str)
 
-  #based on the platform, choose creative file 
-  creative_file = get_creative_file(creative_type) 
- 
+  #based on the platform, choose creative file
+  creative_file = get_creative_file(creative_type)
+
   use_safe_frame = False
   if creative_type == "WEB_SAFEFRAME":
     use_safe_frame = True
@@ -424,8 +445,8 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(), lineitem_type,
     currency_code, custom_targeting, creative_type, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
-    device_category_ids=device_category_ids, roadblock_type=roadblock_type)
-    
+    device_category_ids=device_category_ids, device_capability_ids=device_capability_ids, roadblock_type=roadblock_type)
+
   logger.info("Creating line items...")
   line_item_ids = dfp.create_line_items.create_line_items(line_items_config)
 
@@ -458,7 +479,7 @@ def get_creative_file(creative_type):
 
 def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   sizes, key_gen_obj, lineItemType, currency_code, custom_targeting, creative_type,
-  ad_unit_ids=None, same_adv_exception=False, device_category_ids=None,
+  ad_unit_ids=None, same_adv_exception=False, device_category_ids=None,device_capability_ids=None,
   roadblock_type='ONE_OR_MORE'):
   """
   Create a line item config for each price bucket.
@@ -477,6 +498,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     ad_unit_ids (arr)
     same_adv_exception(bool)
     device_category_ids (int)
+    device_capability_ids (int)
     roadblock_type (str)
   Returns:
     an array of objects: the array of DFP line item configurations
@@ -503,10 +525,16 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
         bidder_str = "_".join(bidder_str)
 
     # Autogenerate the line item name.
-    line_item_name = u'{bidder_code}: OW ${price}'.format(
-      bidder_code=bidder_str,
-      price=price_str
-    )
+    if creative_type not in ('IN_APP'):
+        line_item_name = u'{bidder_code}: OW {price}'.format(
+          bidder_code=bidder_str,
+          price=price_str
+        )
+    else:
+        line_item_name = u'{creative_type}: OW {price}'.format(
+         creative_type=creative_type,
+         price=price_str
+        )
 
     # The DFP targeting value ID for this `hb_pb` price value.
     key_gen_obj.set_price_value(price)
@@ -523,6 +551,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       ad_unit_ids=ad_unit_ids,
       same_adv_exception=same_adv_exception,
       device_categories=device_category_ids,
+      device_capabilities=device_capability_ids,
       roadblock_type=roadblock_type
     )
 
@@ -542,11 +571,9 @@ def get_calculated_rate(start_rate_range, end_rate_range, rate_id, exchange_rate
 
 
 def get_dfp_network():
-    dfp_client = get_client()
-    network_service = dfp_client.GetService('NetworkService', version='v201908')
-    current_network = network_service.getCurrentNetwork()
+    current_network = dfp.get_network.get_dfp_network()
     return current_network
-    
+
 def get_exchange_rate(currency_code):
     #currency_code = 'GBP'
     url = "http://apilayer.net/api/live?access_key=f7603d1bd4e44ba7242dc80858b93d8c&source=USD&currencies=" + currency_code +"&format=1"
@@ -554,7 +581,7 @@ def get_exchange_rate(currency_code):
     string = response.read().decode('utf-8')
     json_obj = json.loads(string)
     return float(json_obj['quotes']['USD' + currency_code])
-    
+
 
 def load_price_csv(filename, creative_type):
     buckets = []
@@ -563,12 +590,12 @@ def load_price_csv(filename, creative_type):
     currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', False)
 
     # we are not converting in case of AMP platform, add more platforms in condition if required
-    if creative_type != 'AMP' and currency_exchange:
+    if creative_type not in ('AMP', 'IN_APP') and currency_exchange:
         network = get_dfp_network()
         print("network currency :", network.currencyCode)
         exchange_rate = get_exchange_rate(network.currencyCode)
-        
-    print("currency exchange rate:", exchange_rate)    
+
+    print("currency exchange rate:", exchange_rate)
     #currency rate handling till here
     with open(filename, 'r') as csvfile:
         preader = csv.reader(csvfile)
@@ -629,11 +656,11 @@ def main():
   user_email = getattr(settings, 'DFP_USER_EMAIL_ADDRESS', None)
   if user_email is None:
     raise MissingSettingException('DFP_USER_EMAIL_ADDRESS')
-   
+
   advertiser_name = getattr(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
-    
+
   advertiser_type = getattr(settings, 'DFP_ADVERTISER_TYPE', "AD_NETWORK")
   if advertiser_type != "ADVERTISER" and advertiser_type != "AD_NETWORK":
     raise BadSettingException('DFP_ADVERTISER_TYPE')
@@ -692,6 +719,14 @@ def main():
   if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
        raise BadSettingException('DFP_DEVICE_CATEGORIES')
 
+  #default device categories to None when creative_type is IN-APP
+  if device_categories is not None and creative_type is 'IN_APP':
+    device_categories = None
+      
+  device_capabilities = None
+  if creative_type is 'IN_APP':
+      device_capabilities = ('Mobile Apps', 'MRAID v1', 'MRAID v2')
+      
   roadblock_type = getattr(settings, 'DFP_ROADBLOCK_TYPE', 'ONE_OR_MORE')
   if roadblock_type not in ('ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'):
       raise BadSettingException('DFP_ROADBLOCK_TYPE')
@@ -721,6 +756,13 @@ def main():
   for p in prices:
       prices_summary.append(p['rate'])
 
+  #if creative_type is in-app set roadblock type to 'AS_MANY_AS_POSSIBLE', bidder code to None and custom_targetting to None
+  if creative_type == 'IN_APP':
+      roadblock_type = 'AS_MANY_AS_POSSIBLE'
+      bidder_code = None
+      custom_targeting = None
+
+      
   logger.info(
     u"""
 
@@ -738,6 +780,7 @@ def main():
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
       {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
       {name_start_format}device categories{format_end} = {value_start_format}{device_categories}{format_end}
+      {name_start_format}device capabilities{format_end} = {value_start_format}{device_capabilities}{format_end}
       {name_start_format}roadblock type{format_end} = {value_start_format}{roadblock_type}{format_end}
     """.format(
       num_line_items = len(prices),
@@ -754,6 +797,7 @@ def main():
       custom_targeting=custom_targeting,
       same_adv_exception=same_adv_exception,
       device_categories=device_categories,
+      device_capabilities=device_capabilities,
       roadblock_type=roadblock_type,
       name_start_format=color.BOLD,
       format_end=color.END,
@@ -782,6 +826,7 @@ def main():
     custom_targeting,
     same_adv_exception,
     device_categories,
+    device_capabilities,
     roadblock_type
   )
 

@@ -25,7 +25,7 @@ def create_line_items(line_items):
 
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
                             lineItemType='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
-                            roadblock_type = 'ONE_OR_MORE'):
+                            device_capabilities = None,roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
 
@@ -75,6 +75,10 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
       'currencyCode': currency_code,
       'microAmount': cpm_micro_amount
     },
+    'valueCostPerUnit':{
+      'currencyCode': currency_code,
+      'microAmount': cpm_micro_amount
+    },
     'roadblockingType': roadblock_type,
     'creativeRotationType': 'EVEN',
     'primaryGoal': {
@@ -95,6 +99,14 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
           dev_cat_targeting.append({'id': str(dc)})
 
       line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
+
+  #device capability targetring
+  if device_capabilities != None and len(device_capabilities) > 0:
+      dev_cap_targeting = []
+      for dc in device_capabilities:
+          dev_cap_targeting.append({'id': str(dc)})
+
+      line_item_config['targeting']['technologyTargeting'] = {'deviceCapabilityTargeting': {'targetedDeviceCapabilities': dev_cap_targeting}}
 
   if placement_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedPlacementIds'] = placement_ids
