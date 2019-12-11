@@ -66,6 +66,15 @@ else:
 
 logger = logging.getLogger(__name__)
 
+creativetype_platform_map = {
+    "WEB": "display",
+    "WEB_SAFEFRAME": "display",
+    "AMP": "amp",
+    "IN-APP": "inapp",
+    "NATIVE": "native",
+    "VIDEO" : "video",
+} 
+
 class OpenWrapTargetingKeyGen(TargetingKeyGen):
     def __init__(self):
 
@@ -85,6 +94,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
         self.bidder_criteria = None
+        self.platform_criteria = None
         self.price_els = None
 
         self.creative_type = None
@@ -172,6 +182,19 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         self.price_els = self.process_price_bucket(price_obj['start'], price_obj['end'], price_obj['granularity'])
         return self.price_els
 
+
+    def set_platform_targetting(self):
+
+        #get platform value from the creative type
+        platform = creativetype_platform_map[self.creative_type]
+        platform_value_id = self.PltValueGetter.get_value_id(platform)
+        self.platform_criteria = {
+            'xsi_type': 'CustomCriteria',
+            'keyId': self.pwtplt_key_id,
+            'valueIds': [platform_value_id],
+            'operator': 'IS'
+        }
+        
     def get_dfp_targeting(self):
 
         # is PWT
@@ -205,18 +228,11 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
             'logicalOperator': 'AND',
             'children': [pwt_bst_criteria]
         }
-        #TODO: Change platform value according to the input platform
-        if self.creative_type is not 'IN_APP':
-            display_value_id = self.PltValueGetter.get_value_id("display")
-            platform_criteria = {
-                'xsi_type': 'CustomCriteria',
-                'keyId': self.pwtplt_key_id,
-                'valueIds': [display_value_id],
-                'operator': 'IS'
-            }
-            top_set['children'].append(platform_criteria)
 
-
+        if self.platform_criteria:
+           top_set['children'].append(self.platform_criteria)
+           
+           
         if self.bidder_criteria:
             top_set['children'].append(self.bidder_criteria)
 
@@ -508,6 +524,10 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
   key_gen_obj.set_bidder_value(bidder_code)
   key_gen_obj.set_creative_type(creative_type)
   key_gen_obj.set_custom_targeting(custom_targeting)
+  #do not set platform targeting for inapp
+  if creative_type is not 'IN_APP':
+      key_gen_obj.set_platform_targetting()
+      
 
   line_items_config = []
   for price in prices:
