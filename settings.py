@@ -21,8 +21,8 @@ DFP_ADVERTISER_NAME = 'PubMatic'
 
 # Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
 #   what type advertisers are looked up and created with.
-#   Defaults to "AD_NETWORK"
-DFP_ADVERTISER_TYPE = "AD_NETWORK"
+#   Defaults to "ADVERTISER"
+DFP_ADVERTISER_TYPE = "ADVERTISER"
 
 # Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
 # This option is only for openwrap
