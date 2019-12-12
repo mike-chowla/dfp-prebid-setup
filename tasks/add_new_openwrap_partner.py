@@ -651,7 +651,7 @@ def main():
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
     
-  advertiser_type = getattr(settings, 'DFP_ADVERTISER_TYPE', "AD_NETWORK")
+  advertiser_type = getattr(settings, 'DFP_ADVERTISER_TYPE', "ADVERTISER")
   if advertiser_type != "ADVERTISER" and advertiser_type != "AD_NETWORK":
     raise BadSettingException('DFP_ADVERTISER_TYPE')
 
