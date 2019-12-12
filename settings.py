@@ -21,8 +21,8 @@ DFP_ADVERTISER_NAME = 'PubMatic'
 
 # Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
 #   what type advertisers are looked up and created with.
-#   Defaults to "AD_NETWORK"
-DFP_ADVERTISER_TYPE = "AD_NETWORK"
+#   Defaults to "ADVERTISER"
+DFP_ADVERTISER_TYPE = "ADVERTISER"
 
 # Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
 # This option is only for openwrap
@@ -82,7 +82,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 #    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
 #    Defaults to no device category targeting
 #    Currently supported for OpenWrap Only
-DFP_DEVICE_CATEGORIES = ['Desktop']
+#DFP_DEVICE_CATEGORIES = ['Desktop']
 
 # Optional
 # DFP Roadblock Type
@@ -115,7 +115,7 @@ PREBID_PRICE_BUCKETS = {
 
 # OpenWrap: Buckets are specified in a CSV fileself
 #   Same file format as the PubMatic Line Item tool
-OPENWRAP_BUCKET_CSV = 'LineItems.csv'
+OPENWRAP_BUCKET_CSV = 'LineItem.csv'
 
 # Optional
 # OpenWrap: Set custom line item targeting values
@@ -125,7 +125,7 @@ OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 #]
 
 # OpenWrap Creative Type
-#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 

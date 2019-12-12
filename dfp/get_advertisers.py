@@ -15,7 +15,7 @@ from dfp.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-def create_advertiser(name, advertiser_type="AD_NETWORK"):
+def create_advertiser(name, advertiser_type="ADVERTISER"):
   """
   Creates a DFP advertiser with name `name` and returns its ID.
 
@@ -43,7 +43,7 @@ def create_advertiser(name, advertiser_type="AD_NETWORK"):
 
   return advertiser
 
-def get_advertiser_id_by_name(name, advertiser_type="AD_NETWORK"):
+def get_advertiser_id_by_name(name, advertiser_type="ADVERTISER"):
   """
   Returns a DFP company ID from company name.
 
