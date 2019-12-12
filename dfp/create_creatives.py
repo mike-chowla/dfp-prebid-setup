@@ -75,7 +75,7 @@ def create_creative_config(name, advertiser_id, size=None, creative_file=None, s
   }
   return config
 
-def build_creative_name(bidder_code, order_name, creative_num, size=None):
+def build_creative_name(bidder_code, order_name, creative_num, size=None, prefix=None):
     """
     Returns a name for a creative.
 
@@ -87,6 +87,10 @@ def build_creative_name(bidder_code, order_name, creative_num, size=None):
     Returns:
       a string
     """
+    if prefix != None and size != None:
+       return '{prefix}_{width}x{height}'.format(
+          prefix=prefix,width=size["width"], height=size["height"] )
+      
     if size == None:
       return '{bidder_code}: HB {order_name}, #{num}'.format(
           bidder_code=bidder_code, order_name=order_name, num=creative_num)
@@ -96,7 +100,7 @@ def build_creative_name(bidder_code, order_name, creative_num, size=None):
           height=size["height"],num=creative_num)
 
 def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id, sizes=None,
-  num_creatives=1, creative_file=None, safe_frame=False):
+  num_creatives=1, creative_file=None, safe_frame=False, prefix=None):
   """
   Returns an array of creative config object.
 
@@ -107,7 +111,8 @@ def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id, si
     sizes(String array): sizes for creative
     num_creatives (int): how many creative configs to generate
     creative_file: (string) file name containing creative content
-    safe_frame (bool): 
+    safe_frame (bool): to enable safe_frame option
+    prefix (string): creative name prefix
   Returns:
     an array: an array of length `num_creatives`, each item a line item config
   """
@@ -127,7 +132,7 @@ def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id, si
     for size in sizes:
       for creative_num in range(1, num_creatives + 1):
         config = create_creative_config(
-          name=build_creative_name(bidder_code, order_name, creative_num, size),
+          name=build_creative_name(bidder_code, order_name, creative_num, size, prefix),
           advertiser_id=advertiser_id,
           size=size,
           creative_file=creative_file,

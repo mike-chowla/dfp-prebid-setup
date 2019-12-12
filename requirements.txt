@@ -4,3 +4,4 @@ googleads==21.0.0
 mock==3.0.5
 pycryptodome==3.9.0
 PyYAML==5.1.2
+shortuuid==0.5.0

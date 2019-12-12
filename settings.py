@@ -16,13 +16,14 @@ DFP_ORDER_NAME = None
 DFP_USER_EMAIL_ADDRESS = None
 
 # The exact name of the DFP advertiser for the created order
-# set 'PubMatic' for openwrap Line items
+# Set 'PubMatic' for openwrap Line items
 DFP_ADVERTISER_NAME = 'PubMatic'
 
 # Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
 #   what type advertisers are looked up and created with.
-#   Defaults to "AD_NETWORK"
-DFP_ADVERTISER_TYPE = "AD_NETWORK"
+#   Defaults to "ADVERTISER"
+#  This option is only for openwrap
+DFP_ADVERTISER_TYPE = "ADVERTISER"
 
 # Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
 # This option is only for openwrap
@@ -33,6 +34,7 @@ DFP_LINEITEM_TYPE= "PRICE_PRIORITY"
 DFP_TARGETED_PLACEMENT_NAMES = []
 
 # Names of ad units the line items should target.
+# This option is only for prebid
 DFP_TARGETED_AD_UNIT_NAMES = []
 
 # Sizes of placements. These are used to set line item and creative sizes.
@@ -74,7 +76,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 
 # Optional
 # Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
-#   Currently only works for OpenWrap
+# Currently only works for OpenWrap
 #DFP_SAME_ADV_EXCEPTION = True
 
 # Optional
@@ -82,7 +84,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 #    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
 #    Defaults to no device category targeting
 #    Currently supported for OpenWrap Only
-DFP_DEVICE_CATEGORIES = ['Desktop']
+#DFP_DEVICE_CATEGORIES = ['Desktop']
 
 # Optional
 # DFP Roadblock Type
@@ -91,8 +93,14 @@ DFP_DEVICE_CATEGORIES = ['Desktop']
 #    Currently supported for OpenWrap Only
 #DFP_ROADBLOCK_TYPE = 'AS_MANY_AS_POSSIBLE'
 
+# Optional
+# The prefix you want to add in line item's name.
+# This option is for openwrap only
+#LINE_ITEM_PREFIX = 'test_li'
+
+
 #########################################################################
-# PREBID SETTINGS
+# PREBID/OPENWRAP SETTINGS
 #########################################################################
 
 # OpenWrap: you can specify an array to target multiple bidders
@@ -106,16 +114,17 @@ PREBID_BIDDER_CODE = ["pubmatic"]
 # http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity
 # FIXME: this should be an array of buckets. See:
 # https://github.com/prebid/Prebid.js/blob/8fed3d7aaa814e67ca3efc103d7d306cab8c692c/src/cpmBucketManager.js
-PREBID_PRICE_BUCKETS = {
-  'precision': 2,
-  'min' : 0,
-  'max' : 20,
-  'increment': 0.10,
-}
+#PREBID_PRICE_BUCKETS = {
+#  'precision': 2,
+#  'min' : 0,
+#  'max' : 20,
+#  'increment': 0.10,
+#}
 
 # OpenWrap: Buckets are specified in a CSV fileself
-#   Same file format as the PubMatic Line Item tool
-OPENWRAP_BUCKET_CSV = 'LineItems.csv'
+#  Same file format as the PubMatic Line Item tool
+#  Order and advertiser name from csv are ignored
+OPENWRAP_BUCKET_CSV = 'LineItem.csv'
 
 # Optional
 # OpenWrap: Set custom line item targeting values
@@ -125,7 +134,7 @@ OPENWRAP_BUCKET_CSV = 'LineItems.csv'
 #]
 
 # OpenWrap Creative Type
-#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 
