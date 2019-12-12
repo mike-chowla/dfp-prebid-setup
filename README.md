@@ -1,12 +1,12 @@
 [![Build Status](https://travis-ci.org/kmjennison/dfp-prebid-setup.svg?branch=master)](https://travis-ci.org/kmjennison/dfp-prebid-setup)
 
-# Setup Tool for Prebid and GAM (previously DFP)
-An automated line item generator for [Prebid.js](http://prebid.org/) and Google Ad Manager (previously DFP)
+# Setup Tool for Prebid, Openwrap and GAM (previously DFP)
+An automated line item generator for [Prebid.js](http://prebid.org/), Openwrap and Google Ad Manager (previously DFP)
 
 ## Overview
-When setting up Prebid, your ad ops team often has to create [hundreds of line items](http://prebid.org/adops.html) in Google Ad Manager (GAM).
+When setting up Prebid/Openwrap, your ad ops team often has to create [hundreds of line items](http://prebid.org/adops.html) in Google Ad Manager (GAM).
 
-This tool automates setup for new header bidding partners. You define the advertiser, placements or ad units, and Prebid settings; then, it creates an order with one line item per price level, attaches creatives, sets placement and/or ad units, and Prebid key-value targeting.
+This tool automates setup for new header bidding partners. You define the advertiser, placements or ad units, and Prebid/Openwrap settings; then, it creates an order with one line item per price level, attaches creatives, sets placement and/or ad units, and Prebid/Openwrap key-value targeting.
 
 While this tool covers typical use cases, it might not fit your needs. Check out the [limitations](#limitations) before you dive in.
 
@@ -38,10 +38,14 @@ _You will need credentials to access your GAM account programmatically. This sum
      * Click **Save**.
 
 ### Setting Up
+
+#### Pre-requisites
+* Installing Python. Python version 3.6 or higher is required.
+* Installing pip. 
+
 1. Clone this repository.
 2. Install Python dependencies
    * Run `pip install -r requirements.txt`
-   * **Important:** Python version 3.6 or higher is required.
 3. Rename key
    * Rename the Google credentials key you previously downloaded (`[something].json`) to `key.json` and move it to the root of this repository
 4. Make a copy of `googleads.example.yaml` and name it `googleads.yaml`.
@@ -68,7 +72,7 @@ Setting | Description | Type
 `DFP_TARGETED_PLACEMENT_NAMES` | The names of GAM placements the line items should target.  Use empty array for `Run Of Network` | array of strings
 `DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
 `PREBID_BIDDER_CODE` | The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner.  Set to `None` to generate line items for all partners.  Use array of strings if the line should match multiple partners | string or array of strings.
-`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are WEB, WEB_SAFEFRAME, AMP, IN_APP
+`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are WEB, WEB_SAFEFRAME, AMP, IN_APP | string
 `OPENWRAP_BUCKET_CSV` | CSV that that list buckets and price granularity; used to set `pwtecp` targeting for each line item | string
 
 Then, from the root of the repository, run:
@@ -90,7 +94,7 @@ Setting | Description | Type | Default
 `DFP_SAME_ADV_EXCEPTION` | Whether to set the "Same Advertiser Exception" on line items. Currently it only works for OpenWrap | bool | `False`
 `DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item. Valid Values are: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | string or array of string | None
 `DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool. Valid values are: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE' | string | None
-`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays Eg: [("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))] | None
+`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays e.g.: `[("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))]` | None
 `CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent | bool | `False`
 
 
