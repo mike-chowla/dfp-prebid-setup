@@ -75,6 +75,10 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
       'currencyCode': currency_code,
       'microAmount': cpm_micro_amount
     },
+     'valueCostPerUnit':{
+      'currencyCode': currency_code,
+      'microAmount': cpm_micro_amount
+    },
     'roadblockingType': roadblock_type,
     'creativeRotationType': 'EVEN',
     'primaryGoal': {
