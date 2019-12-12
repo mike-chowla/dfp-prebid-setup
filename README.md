@@ -56,7 +56,49 @@ Let's try it out! From the top level directory, run
 
 and you should see all of the orders in your GAM account.
 
-## Creating Line Items
+## Creating Line Items for OpenWrap
+
+Modify the following settings in `settings.py`:
+
+Setting | Description | Type
+------------ | ------------- | -------------
+`DFP_ORDER_NAME` | What you want to call your new GAM order | string
+`DFP_USER_EMAIL_ADDRESS` | The email of the GAM user who will be the trafficker for the created order | string
+`DFP_ADVERTISER_NAME` | The name of the GAM advertiser for the created order | string
+`DFP_TARGETED_PLACEMENT_NAMES` | The names of GAM placements the line items should target.  Use empty array for `Run Of Network` | array of strings
+`DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
+`PREBID_BIDDER_CODE` | The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner.  Set to `None` to generate line items for all partners.  Use array of strings if the line should match multiple partners | string or array of strings.
+`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are WEB, WEB_SAFEFRAME, AMP, IN_APP
+`OPENWRAP_BUCKET_CSV` | CSV that that list buckets and price granularity; used to set `pwtecp` targeting for each line item | string
+
+Then, from the root of the repository, run:
+
+`python -m tasks.add_new_openwrap_partner`
+
+You should be all set! Review your order, line items, and creatives to make sure they are correct. Then, approve the order in DFP.
+
+*Note: GAM might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
+
+## Additional Settings
+
+In most cases, you won't need to modify these settings.
+
+Setting | Description | Type | Default
+------------ | ------------- | ------------- | -------------
+`DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST` | Whether we should create the advertiser with `DFP_ADVERTISER_NAME` in GAM if it does not exist | bool | `False`
+`DFP_USE_EXISTING_ORDER_IF_EXISTS` | Whether we should modify an existing order if one already exists with name `DFP_ORDER_NAME` | bool | `False`
+`DFP_NUM_CREATIVES_PER_LINE_ITEM` | The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. | int | the length of setting `DFP_TARGETED_PLACEMENT_NAMES`
+`DFP_CURRENCY_CODE` | The currency to use in line items | string | `'USD'`
+`DFP_SAME_ADV_EXCEPTION` | Whether to set the "Same Advertiser Exception" on line items. Currently it only works for OpenWrap | bool | `False`
+`DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item
+Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | array of string | None
+`DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool.
+Valid values are:  'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'. Currently supported for OpenWrap Only | string | None
+`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item.  OpenWrap only | array of arrays | None
+`CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent | bool | `False`
+
+
+## Creating Line Items for Prebid
 
 Modify the following settings in `settings.py`:
 
@@ -93,15 +135,8 @@ Setting | Description | Default
 
 ## Limitations
 
-* This tool does not currently support run-of-network line items (see [#16](../../issues/16)). You must target line items to placements, ad units, or both.
-* Currently, the names of the bidder code targeting key (`hb_bidder`) and price bucket targeting key (`hb_pb`) are not customizable. The `hb_bidder` targeting key is currently required (see [#18](../../issues/18))
-* This tool does not support additional line item targeting beyond placement, ad units, `hb_bidder`, and `hb_pb` values. It does not yet support setting other options on the line item such as the "Allow same advertiser exception" (see [#59](../../issues/59))
+* This tool does not support additional line item targeting beyond placement, ad units, `hb_bidder`, and `hb_pb` values.
 * The price bucketing setting `PREBID_PRICE_BUCKETS` only allows for uniform bucketing (see [#27](../../issues/27)). For example, you can create $0.01 buckets from $0 - $20, but you cannot specify $0.01 buckets from $0 - $5 and $0.50 buckets from $5 - $20. Using entirely $0.01 buckets will still work for the custom buckets—you'll just have more line items than you need.
-* This tool does not modify existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it.
+* This tool does not modify existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it. But you can add new line items in the exisiting order if the flag DFP_USE_EXISTING_ORDER_IF_EXISTS is set.
 
 Please consider [contributing](CONTRIBUTING.md) to make the tool more flexible.
-
-## Contributors
-Thanks to these people for making this tool better 🤗:
-
-[@couhie](https://github.com/couhie), [@dlackty](https://github.com/dlackty), [@pbrisson](https://github.com/pbrisson), [@jsonUK](https://github.com/jsonUK)

@@ -24,7 +24,7 @@ def create_line_items(line_items):
 
 
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
-                            lineItemType='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
+                            lineitem_type='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
                             roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
@@ -39,7 +39,7 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     sizes (arr): an array of objects, each containing 'width' and 'height'
       keys, to set the creative sizes this line item will serve
     key_gen_obj (obj): targeting key gen object
-    lineItemType (str): the type of line item('PRICE_PRIORTY', 'HOUSE' or 'NETWORK')
+    lineitem_type (str): the type of line item('PRICE_PRIORTY', 'HOUSE' or 'NETWORK')
     currency_code (str): the currency code (e.g. 'USD' or 'EUR')
     same_adv_exception (bool) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#disablesameadvertisercompetitiveexclusion
     roadblock_type (str) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#roadblockingtype
@@ -69,7 +69,7 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     },
     'startDateTimeType': 'IMMEDIATELY',
     'unlimitedEndDateTime': True,
-    'lineItemType': lineItemType,
+    'lineItemType': lineitem_type,
     'costType': 'CPM',
     'costPerUnit': {
       'currencyCode': currency_code,
@@ -89,7 +89,7 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
   }
 
   #for network and house line-items, set goal type and units
-  if lineItemType in ('NETWORK','HOUSE'):
+  if lineitem_type in ('NETWORK','HOUSE'):
     line_item_config['primaryGoal']['goalType'] = 'DAILY'
     line_item_config['primaryGoal']['units'] = 100
 
