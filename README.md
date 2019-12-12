@@ -79,9 +79,7 @@ You should be all set! Review your order, line items, and creatives to make sure
 
 *Note: GAM might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
 
-## Additional Settings
-
-In most cases, you won't need to modify these settings.
+## Additional optional settings
 
 Setting | Description | Type | Default
 ------------ | ------------- | ------------- | -------------
@@ -90,11 +88,9 @@ Setting | Description | Type | Default
 `DFP_NUM_CREATIVES_PER_LINE_ITEM` | The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. | int | the length of setting `DFP_TARGETED_PLACEMENT_NAMES`
 `DFP_CURRENCY_CODE` | The currency to use in line items | string | `'USD'`
 `DFP_SAME_ADV_EXCEPTION` | Whether to set the "Same Advertiser Exception" on line items. Currently it only works for OpenWrap | bool | `False`
-`DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item
-Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | array of string | None
-`DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool.
-Valid values are:  'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'. Currently supported for OpenWrap Only | string | None
-`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item.  OpenWrap only | array of arrays | None
+`DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item. Valid Values are: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | string or array of string | None
+`DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool. Valid values are: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE' | string | None
+`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays Eg: [("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))] | None
 `CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent | bool | `False`
 
 
