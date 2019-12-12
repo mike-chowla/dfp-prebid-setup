@@ -448,7 +448,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   # Associate creatives with line items.
   logger.info("Creating lica...")
   dfp.associate_line_items_and_creatives.make_licas(line_item_ids,
-    creative_ids, size_overrides=sizes)
+    creative_ids)
 
   logger.info("""
 
