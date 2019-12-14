@@ -43,6 +43,7 @@ _You will need credentials to access your GAM account programmatically. This sum
 * Installing Python. Python version 3.6 or higher is required.
 * Installing pip. 
 
+#### Steps
 1. Clone this repository.
 2. Install Python dependencies
    * Run `pip install -r requirements.txt`
@@ -62,7 +63,7 @@ and you should see all of the orders in your GAM account.
 
 ## Creating Line Items for OpenWrap
 
-Modify the following settings in `settings.py`:
+Modify the following mandatory settings in `settings.py`:
 
 Setting | Description | Type
 ------------ | ------------- | -------------
@@ -135,8 +136,4 @@ Setting | Description | Default
 
 ## Limitations
 
-* This tool does not support additional line item targeting beyond placement, ad units, `hb_bidder`, and `hb_pb` values.
-* The price bucketing setting `PREBID_PRICE_BUCKETS` only allows for uniform bucketing (see [#27](../../issues/27)). For example, you can create $0.01 buckets from $0 - $20, but you cannot specify $0.01 buckets from $0 - $5 and $0.50 buckets from $5 - $20. Using entirely $0.01 buckets will still work for the custom buckets—you'll just have more line items than you need.
 * This tool does not modify existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it. But you can add new line items in the exisiting order if the flag DFP_USE_EXISTING_ORDER_IF_EXISTS is set.
-
-Please consider [contributing](CONTRIBUTING.md) to make the tool more flexible.
