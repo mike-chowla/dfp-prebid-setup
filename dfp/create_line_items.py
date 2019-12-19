@@ -24,7 +24,7 @@ def create_line_items(line_items):
 
 
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
-                            lineItemType='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
+                            lineitem_type='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
                             device_capabilities = None,roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.

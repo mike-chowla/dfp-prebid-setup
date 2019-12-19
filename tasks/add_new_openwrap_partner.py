@@ -194,18 +194,6 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         }
 
 
-    def set_platform_targetting(self):
-
-        #get platform value from the creative type
-        platform = creativetype_platform_map[self.creative_type]
-        platform_value_id = self.PltValueGetter.get_value_id(platform)
-        self.platform_criteria = {
-            'xsi_type': 'CustomCriteria',
-            'keyId': self.pwtplt_key_id,
-            'valueIds': [platform_value_id],
-            'operator': 'IS'
-        }
-        
     def get_dfp_targeting(self):
 
         # is PWT
@@ -551,9 +539,6 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       key_gen_obj.set_platform_targetting()
       
 
-  # Set DFP custom targeting for key `pwtplt`
-  key_gen_obj.set_platform_targetting()
-  
   line_items_config = []
 
   #create line item config for each price
