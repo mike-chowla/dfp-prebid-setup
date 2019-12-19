@@ -34,7 +34,7 @@ class DFPGetAdvertisersTests(TestCase):
           'results': [{
             'id': 135792468,
             'name': advertiser_name,
-            'type': 'AD_NETWORK',
+            'type': 'ADVERTISER',
             'creditStatus': 'ACTIVE',
             'lastModifiedDateTime': {} # some date
           }]
@@ -56,7 +56,7 @@ class DFPGetAdvertisersTests(TestCase):
       		'key': 'type',
 		      'value': {
 			      'xsi_type': 'TextValue',
-			      'value': 'AD_NETWORK'
+			      'value': 'ADVERTISER'
 		      }
 	     }]
       }
@@ -114,7 +114,7 @@ class DFPGetAdvertisersTests(TestCase):
         }
       )
     dfp.get_advertisers.get_advertiser_id_by_name(advertiser_name)
-    mock_create_advertiser.assert_called_once_with(advertiser_name, 'AD_NETWORK')
+    mock_create_advertiser.assert_called_once_with(advertiser_name, 'ADVERTISER')
 
   def test_get_duplicate_advertisers(self, mock_dfp_client):
     """
@@ -187,7 +187,7 @@ class DFPGetAdvertisersTests(TestCase):
     expected_config = [
       {
         'name': advertiser_name,
-        'type': 'AD_NETWORK'
+        'type': 'ADVERTISER'
       }
     ]
 
