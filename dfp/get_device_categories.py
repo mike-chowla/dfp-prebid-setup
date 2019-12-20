@@ -23,7 +23,7 @@ def get_device_categories():
   """
 
   dfp_client = get_client()
-  report_downloader = dfp_client.GetDataDownloader(version='v201811')
+  report_downloader = dfp_client.GetDataDownloader(version='v201908')
 
   device_query = ('SELECT Id, DeviceCategoryName '
                          'FROM Device_Category ')

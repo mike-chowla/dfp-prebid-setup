@@ -1,0 +1,5 @@
+order_name,advertiser,start_range,end_range,granularity,"rate_id[1=Average, 2=Minimum] "
+test57,Pubmatic,0,10,0.05,2
+test57,Pubmatic,10,20,0.5,2
+test57,Pubmatic,20,50,1,2
+test57,Pubmatic,50,60,-1,2

@@ -3,14 +3,15 @@
 
 import logging
 import sys
+import re
 
 from googleads import ad_manager
 
 from dfp.client import get_client
 
+re_price = re.compile("(.+)(\d+\.\d+)$")
 
 logger = logging.getLogger(__name__)
-
 
 def get_line_items_for_order(order_id):
   """
@@ -41,6 +42,18 @@ def get_line_items_for_order(order_id):
         print('Line item with ID "%d" and name "%s" was found.\n' %
               (line_item['id'], line_item['name']))
         line_items.append(line_item)
+
+        name = line_item['name']
+        m = re_price.search(name)
+        if m:
+            cpm = m[2]
+            cpm_mod = re.sub("\d$", "0", cpm)
+            cpm_mod_f = float(cpm_mod)
+            cpm_mod_micro = int(cpm_mod_f * 1000000)
+            new_name = "{0}{1}".format(m[1],cpm_mod)
+            print("      {0} {1}".format(new_name, cpm_mod_micro))
+
+        re.compile
       statement.offset += statement.limit
     else:
       break
