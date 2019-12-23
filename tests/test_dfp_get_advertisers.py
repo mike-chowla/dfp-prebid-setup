@@ -34,7 +34,7 @@ class DFPGetAdvertisersTests(TestCase):
           'results': [{
             'id': 135792468,
             'name': advertiser_name,
-            'type': 'AD_NETWORK',
+            'type': 'ADVERTISER',
             'creditStatus': 'ACTIVE',
             'lastModifiedDateTime': {} # some date
           }]
@@ -45,15 +45,21 @@ class DFPGetAdvertisersTests(TestCase):
 
     # Expected argument to use in call to DFP.
     expected_statement = {
-      'query': 'WHERE name = :name LIMIT 500 OFFSET 0',
+      'query': 'WHERE name = :name AND type = :type LIMIT 500 OFFSET 0',
       'values': [{
+        'key': 'name',
         'value': {
-          'value': advertiser_name,
-          'xsi_type': 'TextValue'
-          },
-          'key': 'name'
-        }]
-    }
+          'xsi_type': 'TextValue',
+           'value': advertiser_name
+          }
+        },{
+      		'key': 'type',
+		      'value': {
+			      'xsi_type': 'TextValue',
+			      'value': 'ADVERTISER'
+		      }
+	     }]
+      }
 
     (mock_dfp_client.return_value
       .GetService.return_value
@@ -108,7 +114,7 @@ class DFPGetAdvertisersTests(TestCase):
         }
       )
     dfp.get_advertisers.get_advertiser_id_by_name(advertiser_name)
-    mock_create_advertiser.assert_called_once_with(advertiser_name)
+    mock_create_advertiser.assert_called_once_with(advertiser_name, 'ADVERTISER')
 
   def test_get_duplicate_advertisers(self, mock_dfp_client):
     """
@@ -181,7 +187,7 @@ class DFPGetAdvertisersTests(TestCase):
     expected_config = [
       {
         'name': advertiser_name,
-        'type': 'AD_NETWORK'
+        'type': 'ADVERTISER'
       }
     ]
 

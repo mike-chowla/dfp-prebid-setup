@@ -3,7 +3,6 @@ from googleads import ad_manager
 
 from dfp.client import get_client
 
-
 def create_line_items(line_items):
   """
   Creates line items in DFP.
@@ -23,8 +22,10 @@ def create_line_items(line_items):
     created_line_item_ids.append(line_item['id'])
   return created_line_item_ids
 
-def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, hb_bidder_key_id,
-                            hb_pb_key_id, hb_bidder_value_id, hb_pb_value_id, currency_code='USD'):
+
+def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
+                            lineitem_type='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
+                            roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
 
@@ -37,47 +38,25 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
       line item
     sizes (arr): an array of objects, each containing 'width' and 'height'
       keys, to set the creative sizes this line item will serve
-    hb_bidder_key_id (int): the DFP ID of the `hb_bidder` targeting key
-    hb_pb_key_id (int): the DFP ID of the `hb_pb` targeting key
+    key_gen_obj (obj): targeting key gen object
+    lineitem_type (str): the type of line item('PRICE_PRIORTY', 'HOUSE' or 'NETWORK')
     currency_code (str): the currency code (e.g. 'USD' or 'EUR')
+    same_adv_exception (bool) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#disablesameadvertisercompetitiveexclusion
+    roadblock_type (str) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#roadblockingtype
+ 
   Returns:
     an object: the line item config
   """
 
   # Set up sizes.
   creative_placeholders = []
-  
+
   for size in sizes:
     creative_placeholders.append({
       'size': size
     })
 
-  # Create key/value targeting for Prebid.
-  # https://github.com/googleads/googleads-python-lib/blob/master/examples/dfp/v201802/line_item_service/target_custom_criteria.py
-  # create custom criterias
-
-  hb_bidder_criteria = {
-    'xsi_type': 'CustomCriteria',
-    'keyId': hb_bidder_key_id,
-    'valueIds': [hb_bidder_value_id],
-    'operator': 'IS'
-  }
-
-  hb_pb_criteria = {
-    'xsi_type': 'CustomCriteria',
-    'keyId': hb_pb_key_id,
-    'valueIds': [hb_pb_value_id],
-    'operator': 'IS'
-  }
-
-  # The custom criteria will resemble:
-  # (hb_bidder_criteria.key == hb_bidder_criteria.value AND
-  #    hb_pb_criteria.key == hb_pb_criteria.value)
-  top_set = {
-    'xsi_type': 'CustomCriteriaSet',
-    'logicalOperator': 'AND',
-    'children': [hb_bidder_criteria, hb_pb_criteria]
-  }
+  top_set = key_gen_obj.get_dfp_targeting()
 
   # https://developers.google.com/doubleclick-publishers/docs/reference/v201802/LineItemService.LineItem
   line_item_config = {
@@ -90,18 +69,37 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     },
     'startDateTimeType': 'IMMEDIATELY',
     'unlimitedEndDateTime': True,
-    'lineItemType': 'PRICE_PRIORITY',
+    'lineItemType': lineitem_type,
     'costType': 'CPM',
     'costPerUnit': {
       'currencyCode': currency_code,
       'microAmount': cpm_micro_amount
     },
+     'valueCostPerUnit':{
+      'currencyCode': currency_code,
+      'microAmount': cpm_micro_amount
+    },
+    'roadblockingType': roadblock_type,
     'creativeRotationType': 'EVEN',
     'primaryGoal': {
       'goalType': 'NONE'
     },
     'creativePlaceholders': creative_placeholders,
+    'disableSameAdvertiserCompetitiveExclusion': same_adv_exception
   }
+
+  #for network and house line-items, set goal type and units
+  if lineitem_type in ('NETWORK','HOUSE'):
+    line_item_config['primaryGoal']['goalType'] = 'DAILY'
+    line_item_config['primaryGoal']['units'] = 100
+
+  if device_categories != None and len(device_categories) > 0:
+      dev_cat_targeting = []
+      for dc in device_categories:
+          dev_cat_targeting.append({'id': str(dc)})
+
+      line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
+
   if placement_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedPlacementIds'] = placement_ids
 

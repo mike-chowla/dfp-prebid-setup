@@ -101,18 +101,6 @@ class AddNewPrebidPartnerTests(TestCase):
     args, kwargs = mock_setup_partners.call_args
     self.assertEqual(args[9], 'EUR')
 
-  @patch('settings.DFP_LINE_ITEM_FORMAT', u'{bidder_code}: HB ${price:0>5}', create=True)
-  @patch('tasks.add_new_prebid_partner.setup_partner')
-  @patch('tasks.add_new_prebid_partner.input', return_value='y')
-  def test_custom_line_item_format(self, mock_input, mock_setup_partners,
-    mock_dfp_client):
-    """
-    Ensure we use the line item format setting if it exists.
-    """
-    tasks.add_new_prebid_partner.main()
-    args, kwargs = mock_setup_partners.call_args
-    self.assertEqual(args[10], u'{bidder_code}: HB ${price:0>5}')
-
   def test_price_bucket_validity_missing_key(self, mock_dfp_client):
     """
     It throws an exception of the price bucket setting
@@ -242,7 +230,7 @@ class AddNewPrebidPartnerTests(TestCase):
     tasks.add_new_prebid_partner.setup_partner(user_email=email, advertiser_name=advertiser, order_name=order,
                                                placements=placements, ad_units=[], sizes=sizes,
                                                bidder_code=bidder_code, prices=prices, num_creatives=2,
-                                               currency_code='USD', line_item_format=u'{bidder_code}: HB ${price:0>5}')
+                                               currency_code='USD')
 
     mock_get_users.get_user_id_by_email.assert_called_once_with(email)
     mock_get_placements.get_placement_ids_by_name.assert_called_once_with(
@@ -252,35 +240,50 @@ class AddNewPrebidPartnerTests(TestCase):
     mock_create_orders.create_order.assert_called_once_with(order, 246810,
       14523)
     (mock_create_creatives.create_duplicate_creative_configs
-      .assert_called_once_with(bidder_code, order, 246810, 2))
+      .assert_called_once_with(bidder_code, order, 246810, num_creatives=2))
     mock_create_creatives.create_creatives.assert_called_once()
     mock_create_line_items.create_line_items.assert_called_once()
     mock_licas.make_licas.assert_called_once()
 
-  def test_create_line_item_configs(self, mock_dfp_client):
+  @patch('dfp.get_custom_targeting')
+  def test_create_line_item_configs(self, mock_get_targeting, mock_dfp_client):
     """
     It creates the expected line item configs.
     """
 
+    mock_get_targeting.get_targeting_by_key_name = MagicMock(
+      return_value=[
+        {
+          'customTargetingKeyId': 987654,
+          'displayName': '12.50',
+          'id': 1324354657,
+          'name': '12.50'
+        },
+        {
+          'customTargetingKeyId': 987654,
+          'displayName': '20.00',
+          'id': 3546576879,
+          'name': '20.00'
+        }
+      ]
+    )
     configs = tasks.add_new_prebid_partner.create_line_item_configs(prices=[100000, 200000, 300000], order_id=1234567,
                                                                     placement_ids=[9876543, 1234567], ad_unit_ids=None,
                                                                     bidder_code='iamabiddr', sizes=[{
             'width': '728',
             'height': '90'
-        }], hb_bidder_key_id=999999, hb_pb_key_id=888888, currency_code='HUF',
-        line_item_format=u'{bidder_code}: HB ${price:0>5}', HBBidderValueGetter=MagicMock(
-            return_value=3434343434), HBPBValueGetter=MagicMock(return_value=5656565656))
+        }], key_gen_obj=tasks.add_new_prebid_partner.PrebidTargetingKeyGen(), currency_code='HUF')
 
     self.assertEqual(len(configs), 3)
 
-    self.assertEqual(configs[0]['name'], 'iamabiddr: HB $00.10')
+    self.assertEqual(configs[0]['name'], 'iamabiddr: HB $0.10')
     self.assertEqual(
       configs[0]['targeting']['inventoryTargeting']['targetedPlacementIds'],
       [9876543, 1234567]
     )
     self.assertEqual(configs[0]['costPerUnit']['microAmount'], 100000)
 
-    self.assertEqual(configs[2]['name'], 'iamabiddr: HB $00.30')
+    self.assertEqual(configs[2]['name'], 'iamabiddr: HB $0.30')
     self.assertEqual(
       configs[2]['targeting']['inventoryTargeting']['targetedPlacementIds'],
       [9876543, 1234567]
@@ -328,7 +331,7 @@ class AddNewPrebidPartnerTests(TestCase):
     # This targeting value does not exist, but we should create it.
     self.assertEqual(getter.get_value_id('15.00'), 44445555)
     mock_create_targeting.create_targeting_value.assert_called_once_with(
-      '15.00', 987654)
+      '15.00', 987654, match_type='EXACT')
 
   @patch('dfp.create_custom_targeting')
   @patch('dfp.get_custom_targeting')
@@ -348,7 +351,7 @@ class AddNewPrebidPartnerTests(TestCase):
     (mock_get_targeting.get_key_id_by_name
       .assert_called_once_with('my-key'))
     (mock_create_targeting.create_targeting_key
-      .assert_called_once_with('my-key'))
+      .assert_called_once_with('my-key',key_type='FREEFORM'))
 
   @patch('dfp.create_custom_targeting')
   @patch('dfp.get_custom_targeting')

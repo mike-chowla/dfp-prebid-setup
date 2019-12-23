@@ -16,12 +16,25 @@ DFP_ORDER_NAME = None
 DFP_USER_EMAIL_ADDRESS = None
 
 # The exact name of the DFP advertiser for the created order
-DFP_ADVERTISER_NAME = None
+# Set 'PubMatic' for openwrap Line items
+DFP_ADVERTISER_NAME = 'PubMatic'
+
+# Advertiser type.  Can be either "ADVERTISER" or "AD_NETWORK".  Controls
+#   what type advertisers are looked up and created with.
+#   Defaults to "ADVERTISER"
+#  This option is only for openwrap
+DFP_ADVERTISER_TYPE = "ADVERTISER"
+
+# Lineitem type. Can be either "NETWORK", "HOUSE", "PRICE_PRIORITY"
+# This option is only for openwrap
+DFP_LINEITEM_TYPE= "PRICE_PRIORITY"
 
 # Names of placements the line items should target.
+# For Openwrap Leave empty for Run of Network (requires Network permission)
 DFP_TARGETED_PLACEMENT_NAMES = []
 
 # Names of ad units the line items should target.
+# This option is only for prebid
 DFP_TARGETED_AD_UNIT_NAMES = []
 
 # Sizes of placements. These are used to set line item and creative sizes.
@@ -43,7 +56,7 @@ DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST = False
 # If settings.DFP_ORDER_NAME is the same as an existing order, add the created 
 # line items to that order. If False, the program will exit rather than
 # modify an existing order.
-DFP_USE_EXISTING_ORDER_IF_EXISTS = False
+DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 
 # Optional
 # Each line item should have at least as many creatives as the number of 
@@ -62,26 +75,74 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = False
 # DFP_CURRENCY_CODE = 'USD'
 
 # Optional
-# The format for line item name. Defaults to u'{bidder_code}: HB ${price}'.
-# This should be specified in python's format syntax.
-# DFP_LINE_ITEM_FORMAT = u'{bidder_code}: HB ${price:0>5}'
+# Whether to set the "Same Advertiser Exception" on line items.  Defaults to false
+# Currently only works for OpenWrap
+#DFP_SAME_ADV_EXCEPTION = True
+
+# Optional
+# Device Category Targeting
+#    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
+#    Defaults to no device category targeting
+#    Currently supported for OpenWrap Only
+#DFP_DEVICE_CATEGORIES = ['Desktop']
+
+# Optional
+# DFP Roadblock Type
+#    Valid Values: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE'
+#    Defaults to 'ONE_OR_MORE'
+#    Currently supported for OpenWrap Only
+#DFP_ROADBLOCK_TYPE = 'AS_MANY_AS_POSSIBLE'
+
+# Optional
+# The prefix you want to add in line item's name.
+# This option is for openwrap only
+#LINE_ITEM_PREFIX = 'test_li'
+
 
 #########################################################################
-# PREBID SETTINGS
+# PREBID/OPENWRAP SETTINGS
 #########################################################################
 
-PREBID_BIDDER_CODE = None
+# OpenWrap: you can specify an array to target multiple bidders
+#  with one line item
+PREBID_BIDDER_CODE = ["pubmatic"]
+#
+# Prebid line item generator only accepts a single value
+#PREBID_BIDDER_CODE = None
 
 # Price buckets. This should match your Prebid settings for the partner. See:
 # http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity
 # FIXME: this should be an array of buckets. See:
 # https://github.com/prebid/Prebid.js/blob/8fed3d7aaa814e67ca3efc103d7d306cab8c692c/src/cpmBucketManager.js
-PREBID_PRICE_BUCKETS = {
-  'precision': 2,
-  'min' : 0,
-  'max' : 20,
-  'increment': 0.10,
-}
+#PREBID_PRICE_BUCKETS = {
+#  'precision': 2,
+#  'min' : 0,
+#  'max' : 20,
+#  'increment': 0.10,
+#}
+
+# OpenWrap: Buckets are specified in a CSV fileself
+#  Same file format as the PubMatic Line Item tool
+#  Order and advertiser name from csv are ignored
+OPENWRAP_BUCKET_CSV = 'LineItem.csv'
+
+# Optional
+# OpenWrap: Set custom line item targeting values
+#OPENWRAP_CUSTOM_TARGETING = [
+#    ("a", "IS", ("1", "2", "3")),
+#    ("b", "IS_NOT", ("4", "5", "6")),
+#]
+
+# OpenWrap Creative Type
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"
+#  Defaults to WEB
+#OPENWRAP_CREATIVE_TYPE = "WEB"
+
+# Optional
+# Openwrap currency conversion
+# This option if set, will convert rate to network's currency, default value is false
+# This flag is currently applicable for web only
+#CURRENCY_EXCHANGE = True
 
 #########################################################################
 

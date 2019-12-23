@@ -3,6 +3,7 @@ from unittest import TestCase
 from mock import MagicMock, patch
 
 import settings
+import tasks.add_new_prebid_partner
 import dfp.create_line_items
 from dfp.exceptions import BadSettingException, MissingSettingException
 
@@ -21,8 +22,7 @@ class DFPCreateLineItemsTests(TestCase):
       dfp.create_line_items.create_line_item_config(name='My Line Item', order_id=1234567,
                                                     placement_ids=['one-placement', 'another-placement'],
                                                     ad_unit_ids=['ad-unit', 'anoher-ad-unit'], cpm_micro_amount=10000000, sizes=[],
-                                                    hb_bidder_key_id=999999, hb_pb_key_id=888888,
-                                                    hb_bidder_value_id=222222, hb_pb_value_id=111111)
+                                                    key_gen_obj=tasks.add_new_prebid_partner.PrebidTargetingKeyGen())
     ]
 
     dfp.create_line_items.create_line_items(line_items_config)
@@ -36,14 +36,18 @@ class DFPCreateLineItemsTests(TestCase):
     """
     Ensure the line item config is created as expected.
     """
-
+    key_gen_obj=tasks.add_new_prebid_partner.PrebidTargetingKeyGen()
+    key_gen_obj.hb_bidder_key_id=999999
+    key_gen_obj.hb_bidder_value_id=222222
+    key_gen_obj.hb_pb_key_id=888888
+    key_gen_obj.hb_pb_value_id=111111
     self.assertEqual(
       dfp.create_line_items.create_line_item_config(name='A Fake Line Item', order_id=1234567,
                                                     placement_ids=['one-placement', 'another-placement-id'],
                                                     ad_unit_ids=['ad-unit', 'anoher-ad-unit'], cpm_micro_amount=24000000, sizes=[{
           'width': '728',
           'height': '90',
-        }], hb_bidder_key_id=999999, hb_pb_key_id=888888, hb_bidder_value_id=222222, hb_pb_value_id=111111),
+        }],key_gen_obj=key_gen_obj),
       {
         'orderId': 1234567,
         'startDateTimeType': 'IMMEDIATELY',
@@ -74,12 +78,15 @@ class DFPCreateLineItemsTests(TestCase):
         'name': 'A Fake Line Item',
         'costType': 'CPM',
         'costPerUnit': {'currencyCode': 'USD', 'microAmount': 24000000},
+        'valueCostPerUnit': {'currencyCode': 'USD', 'microAmount': 24000000},
         'creativeRotationType': 'EVEN',
+        'disableSameAdvertiserCompetitiveExclusion': False,
         'lineItemType': 'PRICE_PRIORITY',
         'unlimitedEndDateTime': True,
         'primaryGoal': {
           'goalType': 'NONE'
         },
+        'roadblockingType': 'ONE_OR_MORE',
         'creativePlaceholders': [
           {
             'size': {
@@ -98,8 +105,7 @@ class DFPCreateLineItemsTests(TestCase):
                                                     ad_unit_ids=['ad-unit', 'anoher-ad-unit'], cpm_micro_amount=40000000, sizes=[{
           'width': '728',
           'height': '90',
-        }], hb_bidder_key_id=999999, hb_pb_key_id=888888, hb_bidder_value_id=222222, hb_pb_value_id=111111,
-                                                    currency_code='EUR'),
+        }], key_gen_obj=key_gen_obj, currency_code='EUR'),
       {
         'orderId': 22334455,
         'startDateTimeType': 'IMMEDIATELY',
@@ -130,12 +136,15 @@ class DFPCreateLineItemsTests(TestCase):
         'name': 'Cool Line Item',
         'costType': 'CPM',
         'costPerUnit': {'currencyCode': 'EUR', 'microAmount': 40000000},
+        'valueCostPerUnit': {'currencyCode': 'EUR', 'microAmount': 40000000},
         'creativeRotationType': 'EVEN',
+        'disableSameAdvertiserCompetitiveExclusion': False,
         'lineItemType': 'PRICE_PRIORITY',
         'unlimitedEndDateTime': True,
         'primaryGoal': {
           'goalType': 'NONE'
         },
+        'roadblockingType': 'ONE_OR_MORE',
         'creativePlaceholders': [
           {
             'size': {

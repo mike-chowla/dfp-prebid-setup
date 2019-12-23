@@ -31,38 +31,51 @@ def create_creatives(creatives):
     logger.info(u'Created creative with name "{name}".'.format(name=creative['name']))
   return created_creative_ids
 
-def create_creative_config(name, advertiser_id):
+def create_creative_config(name, advertiser_id, size=None, creative_file=None, safe_frame=False):
   """
   Creates a creative config object.
 
   Args:
     name (str): the name of the creative
     advertiser_id (int): the ID of the advertiser in DFP
+    sizes (string array): size for the creative
+    creative_file (string): the name of the file containing creative
+    safe_frame (bool): Flag to indicate Whether the Creative is compatible for SafeFrame rendering.
+
+
   Returns:
     an object: the line item config
   """
 
+  if creative_file == None:
+      creative_file = 'creative_snippet.html'
+
   snippet_file_path = os.path.join(os.path.dirname(__file__),
-    'creative_snippet.html')
+    creative_file)
   with open(snippet_file_path, 'r') as snippet_file:
       snippet = snippet_file.read()
 
   # https://developers.google.com/doubleclick-publishers/docs/reference/v201802/CreativeService.Creative
+  
+  #if size is not passed, create creative of size 1x1
+  if size == None:
+    size = {
+      'width': 1,
+      'height': 1
+    }
+    
   config = {
     'xsi_type': 'ThirdPartyCreative',
     'name': name,
     'advertiserId': advertiser_id,
-    'size': {
-      'width': '1',
-      'height': '1'
-    },
+    'size': size,
     'snippet': snippet,
-    'isSafeFrameCompatible': True,
+    # https://github.com/prebid/Prebid.js/issues/418
+    'isSafeFrameCompatible': safe_frame,
   }
-
   return config
 
-def build_creative_name(bidder_code, order_name, creative_num):
+def build_creative_name(bidder_code, order_name, creative_num, size=None, prefix=None):
     """
     Returns a name for a creative.
 
@@ -74,11 +87,20 @@ def build_creative_name(bidder_code, order_name, creative_num):
     Returns:
       a string
     """
-    return '{bidder_code}: HB {order_name}, #{num}'.format(
-        bidder_code=bidder_code, order_name=order_name, num=creative_num)
+    if prefix != None and size != None:
+       return '{prefix}_{width}x{height}'.format(
+          prefix=prefix,width=size["width"], height=size["height"] )
+      
+    if size == None:
+      return '{bidder_code}: HB {order_name}, #{num}'.format(
+          bidder_code=bidder_code, order_name=order_name, num=creative_num)
+    else:
+        return '{bidder_code}: HB {order_name}, {width}x{height} #{num}'.format(
+          bidder_code=bidder_code, order_name=order_name, width=size["width"],
+          height=size["height"],num=creative_num)
 
-def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id,
-  num_creatives=1):
+def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id, sizes=None,
+  num_creatives=1, creative_file=None, safe_frame=False, prefix=None):
   """
   Returns an array of creative config object.
 
@@ -86,16 +108,36 @@ def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id,
     bidder_code (str): the bidder code for the header bidding partner
     order_name (int): the name of the order in DFP
     advertiser_id (int): the ID of the advertiser in DFP
+    sizes(String array): sizes for creative
     num_creatives (int): how many creative configs to generate
+    creative_file: (string) file name containing creative content
+    safe_frame (bool): to enable safe_frame option
+    prefix (string): creative name prefix
   Returns:
     an array: an array of length `num_creatives`, each item a line item config
   """
   creative_configs = []
-  for creative_num in range(1, num_creatives + 1):
-    config = create_creative_config(
-      name=build_creative_name(bidder_code, order_name, creative_num),
-      advertiser_id=advertiser_id,
-    )
-    creative_configs.append(config)
+  #this flow is for prebid where sizes are not passed
+  if sizes == None:
+    for creative_num in range(1, num_creatives + 1):
+      config = create_creative_config(
+        name=build_creative_name(bidder_code, order_name, creative_num),
+        advertiser_id=advertiser_id,
+        creative_file=creative_file,
+        safe_frame=safe_frame
+      )
+      creative_configs.append(config)
+  # this flow is for openwrap, where sizes are considered for creative creation
+  else:
+    for size in sizes:
+      for creative_num in range(1, num_creatives + 1):
+        config = create_creative_config(
+          name=build_creative_name(bidder_code, order_name, creative_num, size, prefix),
+          advertiser_id=advertiser_id,
+          size=size,
+          creative_file=creative_file,
+          safe_frame=safe_frame
+        )
+        creative_configs.append(config)
   return creative_configs
 
