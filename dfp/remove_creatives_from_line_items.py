@@ -18,7 +18,7 @@ def remove_licas(line_item_id):
   """
   dfp_client = get_client()
   lica_service = dfp_client.GetService(
-    'LineItemCreativeAssociationService', version='v201908')
+    'LineItemCreativeAssociationService', version='v201911')
 
  # Create query.
   statement = (dfp.StatementBuilder()
