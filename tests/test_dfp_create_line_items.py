@@ -238,9 +238,11 @@ class DFPCreateLineItemsTests(TestCase):
         # Some simple mock line items.
         {
           'id': 444555666,
+          'name': 'Some Advertiser2 HB $2.50',
         },
         {
           'id': 999888777,
+          'name': 'Some Advertiser3 HB $2.50',
         },
       ])
 

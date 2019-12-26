@@ -134,9 +134,14 @@ OPENWRAP_BUCKET_CSV = 'LineItem.csv'
 #]
 
 # OpenWrap Creative Type
-#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP","NATIVE"
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
+
+# Creative Template 
+# Mandatory for Native creative type
+# you can specify an array for multiple creative templates
+OPENWRAP_CREATIVE_TEMPLATE = 'ganeshformat'
 
 # Optional
 # Openwrap currency conversion

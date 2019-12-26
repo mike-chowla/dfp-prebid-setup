@@ -15,6 +15,7 @@ import settings
 import dfp.associate_line_items_and_creatives
 import dfp.create_custom_targeting
 import dfp.create_creatives
+import dfp.get_creative_template
 import dfp.create_line_items
 import dfp.create_orders
 import dfp.get_advertisers
@@ -376,7 +377,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, advertiser_type, order_name, placements,
-     sizes, lineitem_type, lineitem_prefix, bidder_code, prices, creative_type, num_creatives, currency_code,
+     sizes, lineitem_type, lineitem_prefix, bidder_code, prices, creative_type, creative_template, num_creatives, currency_code,
     custom_targeting, same_adv_exception, device_categories, device_capabilities, roadblock_type):
   """
   Call all necessary DFP tasks for a new Prebid partner setup.
@@ -412,7 +413,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
               raise BadSettingException("Invalid Device Cagetory: {} ".format(dc))
  
  
-  #get device capabilty ids fir in-APP platform         
+  #get device capabilty ids for in-APP platform         
   device_capability_ids = None
   if device_capabilities != None and creative_type is "IN_APP":
       device_capability_ids = []
@@ -436,6 +437,10 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   order_id = dfp.create_orders.create_order(order_name, advertiser_id, user_id)
 
   # Create creatives.
+  #Get creative template for native platform
+  creative_template_ids = None
+  if creative_type == 'NATIVE':
+      creative_template_ids = dfp.get_creative_template.get_creative_template_ids_by_name(creative_template)
 
   #if bidder is None, then bidder will be 'All'
   bidder_str = bidder_code
@@ -444,18 +449,12 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   elif isinstance(bidder_str, (list, tuple)):
       bidder_str = "_".join(bidder_str)
 
-  #based on the platform, choose creative file
-  creative_file = get_creative_file(creative_type)
-
-  use_safe_frame = False
-  if creative_type == "WEB_SAFEFRAME":
-    use_safe_frame = True
-
   #generate unique id that will be used for creative and line item naming
   unique_id = get_unique_id(creative_type)
   
-  creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_str, order_name, advertiser_id, sizes, num_creatives, creative_file=creative_file, safe_frame=use_safe_frame, prefix=unique_id)
+  #create creatives
+  logger.info("creating creatives...")
+  creative_configs = get_creative_config(creative_type, bidder_str, order_name, advertiser_id, sizes, num_creatives, creative_template_ids, prefix=unique_id)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
@@ -466,7 +465,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   logger.info("creating line_items_config...")
   line_items_config = create_line_item_configs(prices, order_id,
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(), lineitem_type, lineitem_prefix,
-    currency_code, custom_targeting, creative_type, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
+    currency_code, custom_targeting, creative_type, creative_template_ids, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
     device_category_ids=device_category_ids, device_capability_ids=device_capability_ids, roadblock_type=roadblock_type)
 
   logger.info("Creating line items...")
@@ -499,8 +498,8 @@ def get_creative_file(creative_type):
 
     return creative_file
 
-def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
-  sizes, key_gen_obj, lineitem_type, lineitem_prefix, currency_code, custom_targeting, creative_type,
+def create_line_item_configs(prices, order_id, placement_ids, bidder_code, sizes, key_gen_obj, 
+  lineitem_type, lineitem_prefix, currency_code, custom_targeting, creative_type, creative_template_ids,
   ad_unit_ids=None, same_adv_exception=False, device_category_ids=None,device_capability_ids=None,
   roadblock_type='ONE_OR_MORE'):
   """
@@ -518,6 +517,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     currency_code (str)
     custom_targeting (arr)
     creative_type (str)
+    creative_template_ids (arr)
     ad_unit_ids (arr)
     same_adv_exception(bool)
     device_category_ids (int)
@@ -571,6 +571,8 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
       key_gen_obj=key_gen_obj,
       lineitem_type=lineitem_type,
       currency_code=currency_code,
+      creative_type=creative_type,
+      creative_template_ids=creative_template_ids,
       ad_unit_ids=ad_unit_ids,
       same_adv_exception=same_adv_exception,
       device_categories=device_category_ids,
@@ -581,6 +583,23 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code,
     line_items_config.append(config)
 
   return line_items_config
+
+#This method returns creative config based on the creative type
+def get_creative_config(creative_type, bidder_str, order_name, advertiser_id, sizes, num_creatives, 
+    creative_template_ids, prefix):
+
+    creative_configs= []
+    if creative_type == 'NATIVE':
+        creative_configs = dfp.create_creatives.create_creative_configs_for_native(advertiser_id, creative_template_ids, num_creatives, prefix)
+    else:
+        use_safe_frame = False
+        if creative_type == "WEB_SAFEFRAME":
+            use_safe_frame = True
+        creative_file = get_creative_file(creative_type)
+        creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
+          bidder_str, order_name, advertiser_id, sizes, num_creatives, creative_file=creative_file, safe_frame=use_safe_frame, prefix=prefix)
+
+    return creative_configs
 
 def get_unique_id(creative_type):
 
@@ -724,12 +743,20 @@ def main():
   if num_placements == 0:
       num_placements = 1
 
+  creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
+  if creative_type is None:
+    creative_type = "WEB"
+  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "NATIVE"]:
+    raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
+
+
   sizes = getattr(settings, 'DFP_PLACEMENT_SIZES', None)
-  if sizes is None:
-    raise MissingSettingException('DFP_PLACEMENT_SIZES')
-  elif len(sizes) < 1:
-    raise BadSettingException('The setting "DFP_PLACEMENT_SIZES" '
-      'must contain at least one size object.')
+  if creative_type != 'NATIVE':
+    if sizes is None:
+        raise MissingSettingException('DFP_PLACEMENT_SIZES')
+    elif len(sizes) < 1:
+        raise BadSettingException('The setting "DFP_PLACEMENT_SIZES" '
+        'must contain at least one size object.')
 
   currency_code = getattr(settings, 'DFP_CURRENCY_CODE', 'USD')
 
@@ -741,11 +768,17 @@ def main():
     num_placements
   )
 
-  creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
-  if creative_type is None:
-    creative_type = "WEB"
-  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "UNIVERSAL"]:
-    raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
+  
+  # read creative template for native Line-items
+  creative_template = None
+  if creative_type == "NATIVE":
+      creative_template = getattr(settings, 'OPENWRAP_CREATIVE_TEMPLATE', None)
+      if creative_template is None:
+        raise MissingSettingException('OPENWRAP_CREATIVE_TEMPLATE')    
+      elif not isinstance (creative_template, (list, str)):
+        raise BadSettingException('OPENWRAP_CREATIVE_TEMPLATE')
+      if isinstance (creative_template, str):
+          creative_template = [creative_template]
 
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
   if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
@@ -869,6 +902,7 @@ def main():
     bidder_code,
     prices,
     creative_type,
+    creative_template,
     num_creatives,
     currency_code,
     custom_targeting,
