@@ -9,11 +9,11 @@ GOOGLEADS_YAML_FILE = os.path.join(ROOT_DIR, 'googleads.yaml')
 #########################################################################
 
 # A string describing the order
-DFP_ORDER_NAME = None
+DFP_ORDER_NAME = 'test_order_name'
 
 # The email of the DFP user who will be the trafficker for
 # the created order
-DFP_USER_EMAIL_ADDRESS = None
+DFP_USER_EMAIL_ADDRESS = 'testuser@email.com'
 
 # The exact name of the DFP advertiser for the created order
 # Set 'PubMatic' for openwrap Line items
