@@ -73,8 +73,9 @@ Setting | Description | Type
 `DFP_TARGETED_PLACEMENT_NAMES` | The names of GAM placements the line items should target.  Use empty array for `Run Of Network` | array of strings
 `DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
 `PREBID_BIDDER_CODE` | The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner.  Set to `None` to generate line items for all partners.  Use array of strings if the line should match multiple partners | string or array of strings.
-`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are WEB, WEB_SAFEFRAME, AMP, IN_APP | string
+`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are WEB, WEB_SAFEFRAME, AMP, IN_APP, NATIVE, VIDEO, JWPLAYER | string
 `OPENWRAP_BUCKET_CSV` | CSV that that list buckets and price granularity; used to set `pwtecp` targeting for each line item | string
+`OPENWRAP_CREATIVE_TEMPLATE` | The creative template name for Native Lineitems. This is only required for OPENWRAP_CREATIVE_TYPE=`NATIVE` | string
 
 Then, from the root of the repository, run:
 
@@ -97,7 +98,7 @@ Setting | Description | Type | Default
 `DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool. Valid values are: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE' | string | None
 `LINE_ITEM_PREFIX` | The prefix to be added in line-item name | string | None
 `OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays e.g.: `[("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))]` | None
-`CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent | bool | `False`
+`CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent. This is applicable for `WEB`, `WEB_SAFEFRAME` and `NATIVE` only | bool | `False`
 
 
 ## Creating Line Items for Prebid
