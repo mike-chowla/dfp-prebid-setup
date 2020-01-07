@@ -286,7 +286,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
         while round(k,2) < round(end_index,2):
 
-            logger.debug("k: {}  end_index: {}".format(k, end_index))
+            #logger.debug("k: {}  end_index: {}".format(k, end_index))
             # if k=1.25 then reminder is 5>0 and for .20 its 0
             if round(k*100) % 10 > 0 or sub_granu == 0.01:
                 if r >= 0:
@@ -307,7 +307,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                     v = k
                     while round(v,2) < round(end,2):
                         v_str = "{0:.2f}".format(v)
-                        logger.debug("----First---- Custom criteria for Line Item is =  %s", v_str)
+                        #logger.debug("----First---- Custom criteria for Line Item is =  %s", v_str)
                         subCustomValueArray.append(v_str)
                         v = v + 0.01
 
@@ -317,7 +317,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                         k = end
 
                 else: # if r >= 0:
-                    logger.debug("----Second---- Custom criteria for Line Item is =  %f", k)
+                    #logger.debug("----Second---- Custom criteria for Line Item is =  %f", k)
                     subCustomValueArray.append(k)
                     k = k + sub_granu
             else: # if round(k*100)%10) > 0 or sub_granu == 0.01
@@ -340,7 +340,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
                         if v+g > end_index and round(v+g,2) != round(end_index,2):
                             subCustomValueArray.append("{0:.2f}".format(temp))
-                            logger.debug("----Third---- Custom criteria for Line Item is =  %.2f", subCustomValueArray[-1])
+                            #logger.debug("----Third---- Custom criteria for Line Item is =  %.2f", subCustomValueArray[-1])
                             g = 0.01
                             v = v + g
                             continue
@@ -350,7 +350,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                         else:
                             subCustomValueArray.append("{0:.2f}".format(v))
 
-                        logger.debug("----Third---- Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----Third---- Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                         v = v + g
 
                     k = k + sub_granu
@@ -364,7 +364,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                     v = 0.01
                     while v <= vEnd-0.01:
                         subCustomValueArray.append(str(round(v,2)))
-                        logger.debug("----Fourth---- Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----Fourth---- Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                         v = v + 0.01
 
                     k = k + vEnd
@@ -374,16 +374,16 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
                     if ((round(k*10)) % 10 != 0 or sub_granu ==0.10) and (round(k+sub_granu,2) <= round(end_index,2)):
                         subCustomValueArray.append(str(round(k,2)))
-                        logger.debug("----fifth----1 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----fifth----1 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                     elif (k+sub_granu > end_index and granu == 1) or (granu> 1 and k + sub_granu >end_index):
                         subCustomValueArray.append("{0:.1f}".format(k))
-                        logger.debug("----fifth----2 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----fifth----2 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                     elif sub_granu == 0.10 and round(k+sub_granu,2) > round(end_index,2) and end_index*100%10 >0:
                         subCustomValueArray.append("{0:.2f}".format(k))
-                        logger.debug("----fifth----2.5 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----fifth----2.5 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                     else:
                         subCustomValueArray.append("{0}.".format(int(k)))
-                        logger.debug("----fifth----3 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----fifth----3 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
 
                     if k >= 1 and round(k*10)%10==0 and k+sub_granu <= end_index: #if $k=2 and end range is 2.57 then it should not increment to 3 while granu is 1
                         k = k+sub_granu
@@ -394,9 +394,9 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
                     if (round(k,2) != round(end_index,2)) and (round(k+0.10,2) != round (end_index,2)) and ((k+0.10 > end_index and granu == 1) or (k + 0.10 > end_index and granu>1)):
                         subCustomValueArray.append("{0:.2f}".format(k))
-                        logger.debug("----fifth----4 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
+                        #logger.debug("----fifth----4 Custom criteria for Line Item is =  %s", subCustomValueArray[-1])
                         k = k + 0.01
-
+        logger.debug("Custom price targetting for each lineitem: {}".format( subCustomValueArray))
         return subCustomValueArray
 
 def setup_partner(user_email, advertiser_name, advertiser_type, order_name, placements,
