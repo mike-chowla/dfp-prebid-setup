@@ -103,8 +103,8 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 # PREBID/OPENWRAP SETTINGS
 #########################################################################
 
-# OpenWrap: you can specify an array to target multiple bidders
-#  with one line item
+# OpenWrap: you can specify an array to target multiple bidders with one line item
+# not applicable for JWPLAYER, IN_APP
 PREBID_BIDDER_CODE = ["pubmatic"]
 #
 # Prebid line item generator only accepts a single value
@@ -121,7 +121,7 @@ PREBID_BIDDER_CODE = ["pubmatic"]
 #  'increment': 0.10,
 #}
 
-# OpenWrap: Buckets are specified in a CSV fileself
+# OpenWrap: Buckets are specified in a CSV file
 #  Same file format as the PubMatic Line Item tool
 #  Order and advertiser name from csv are ignored
 OPENWRAP_BUCKET_CSV = 'LineItem.csv'
@@ -134,7 +134,7 @@ OPENWRAP_BUCKET_CSV = 'LineItem.csv'
 #]
 
 # OpenWrap Creative Type
-#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP","NATIVE"
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "NATIVE", "VIDEO", "JWPLAYER"
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 
@@ -146,7 +146,7 @@ OPENWRAP_CREATIVE_TEMPLATE = 'ganeshformat'
 # Optional
 # Openwrap currency conversion
 # This option if set, will convert rate to network's currency, default value is false
-# This flag is currently applicable for web only
+# This flag is applicable for WEB, WEB_SAFEFRAME and NATIVE only
 #CURRENCY_EXCHANGE = True
 
 #########################################################################

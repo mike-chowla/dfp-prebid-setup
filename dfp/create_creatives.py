@@ -173,3 +173,25 @@ def create_creative_config_native(name, advertiser_id, creative_template_id):
     'isNativeEligible': True
   }
   return creative
+
+# This method creates creative config of type VastRedirectCreative
+def create_creative_configs_for_video(advertiser_id, sizes, prefix, vast_url, duration):
+  
+  creative_configs = []
+
+  for size in sizes:
+    name = '{prefix}_{width}x{height}_VASTCREATIVE'.format(
+          prefix=prefix,width=size["width"], height=size["height"])
+    
+    creative = {
+      'xsi_type': 'VastRedirectCreative',
+      'name': name,
+      'advertiserId': advertiser_id,
+      'size': size,
+      'vastXmlUrl': vast_url,
+      'duration' : duration,
+      'vastRedirectType' : 'LINEAR'
+    }
+    creative_configs.append(creative)
+    
+  return creative_configs

@@ -11,10 +11,13 @@ from pprint import pprint
 
 from colorama import init
 
+import constant
 import settings
+
 import dfp.associate_line_items_and_creatives
 import dfp.create_custom_targeting
 import dfp.create_creatives
+import dfp.create_creative_sets
 import dfp.get_creative_template
 import dfp.create_line_items
 import dfp.create_orders
@@ -26,6 +29,7 @@ import dfp.get_device_categories
 import dfp.get_root_ad_unit_id
 import dfp.get_network
 import dfp.get_device_capabilities
+
 from dfp.exceptions import (
   BadSettingException,
   MissingSettingException
@@ -49,6 +53,7 @@ import shortuuid
 from dfp.client import get_client
 
 
+
 # Colorama for cross-platform support for colored logging.
 # https://github.com/kmjennison/dfp-prebid-setup/issues/9
 init()
@@ -68,12 +73,13 @@ else:
 logger = logging.getLogger(__name__)
 
 creativetype_platform_map = {
-    "WEB": "display",
-    "WEB_SAFEFRAME": "display",
-    "AMP": "amp",
-    "IN-APP": "inapp",
-    "NATIVE": "native",
-    "VIDEO" : "video",
+    constant.WEB: "display",
+    constant.WEB_SAFEFRAME: "display",
+    constant.AMP: "amp",
+    constant.IN_APP: "inapp",
+    constant.NATIVE: "native",
+    constant.VIDEO : "video",
+    constant.JW_PLAYER : "jwp"
 } 
 
 class OpenWrapTargetingKeyGen(TargetingKeyGen):
@@ -84,7 +90,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         # Get DFP key IDs for line item targeting.
         self.pwtpid_key_id = get_or_create_dfp_targeting_key('pwtpid', key_type='PREDEFINED')  # bidder
         self.pwtbst_key_id = get_or_create_dfp_targeting_key('pwtbst', key_type='PREDEFINED')  # is pwt
-        self.pwtcep_key_id = get_or_create_dfp_targeting_key('pwtecp', key_type='FREEFORM') # price
+        self.pwtecp_key_id = get_or_create_dfp_targeting_key('pwtecp', key_type='FREEFORM') # price
         self.pwtplt_key_id = get_or_create_dfp_targeting_key('pwtplt', key_type='PREDEFINED') # platform
 
         # Instantiate DFP targeting value ID getters for the targeting keys.
@@ -97,7 +103,8 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         self.bidder_criteria = None
         self.platform_criteria = None
         self.price_els = None
-
+        self.jwPriceValueGetter = None
+        self.jw_price_key_id = None
         self.creative_type = None
         self.get_custom_targeting = []
 
@@ -136,6 +143,10 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
     def set_creative_type(self, ct):
         self.creative_type = ct
+
+    def set_jwplayer_key(self): 
+        self.jw_price_key_id = get_or_create_dfp_targeting_key('vpb_pubmatic_bid', key_type='FREEFORM')
+        self.jwPriceValueGetter = DFPValueIdGetter('vpb_pubmatic_bid', match_type='PREFIX')
 
     def set_custom_targeting(self, custom_targeting):
         self.custom_targeting = []
@@ -207,11 +218,19 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
 
         # Generate Ids for all the price elements
         price_value_ids = []
+        price_key_id = self.pwtecp_key_id
+        price_value_getter = self.PriceValueGetter
+
+        #for JW player set key to 'vpb_pubmatic_bid' for price targetting
+        if self.creative_type == constant.JW_PLAYER:
+            price_key_id = self.jw_price_key_id
+            price_value_getter = self.jwPriceValueGetter
+
         for p in self.price_els:
-            value_id = self.PriceValueGetter.get_value_id(p)
+            value_id = price_value_getter.get_value_id(p)
             custom_criteria = {
                 'xsi_type': 'CustomCriteria',
-                'keyId': self.pwtcep_key_id ,
+                'keyId': price_key_id ,
                 'valueIds': [value_id],
                 'operator': 'IS'
             }
@@ -226,22 +245,26 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         top_set = {
             'xsi_type': 'CustomCriteriaSet',
             'logicalOperator': 'AND',
-            'children': [pwt_bst_criteria]
+            'children': [price_set]
         }
-       
 
-        if self.platform_criteria:
-           top_set['children'].append(self.platform_criteria)
-           
-           
-        if self.bidder_criteria:
-            top_set['children'].append(self.bidder_criteria)
+        # dont set other targetting for JW Player
+        if self.creative_type is not constant.JW_PLAYER:
+            
+            #pwtbst
+            top_set['children'].append(pwt_bst_criteria)
 
-        top_set['children'].append(price_set)
+            #pwtplt
+            if self.platform_criteria:
+                top_set['children'].append(self.platform_criteria)
+            
+            #pwtpid
+            if self.bidder_criteria:
+                top_set['children'].append(self.bidder_criteria)
 
-        if len(self.custom_targeting) > 0:
-            #top_set['children'].append(self.custom_targeting[0])
-            top_set['children'].extend(self.custom_targeting)
+            #custom targetting
+            if len(self.custom_targeting) > 0:
+                top_set['children'].extend(self.custom_targeting)
 
         return top_set
 
@@ -397,9 +420,9 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
       ad_unit_ids = [ root_id ]
 
   # Get the device category IDs
-  # Dont get device categories for in-app platform
+  # Dont get device categories for in-app and jwplayer platform
   device_category_ids = None
-  if device_categories != None and creative_type != "IN_APP":
+  if device_categories != None and creative_type not in (constant.IN_APP, constant.JW_PLAYER):
       device_category_ids = []
       if isinstance(device_categories, str):
           device_categories = (device_categories)
@@ -415,7 +438,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
  
   #get device capabilty ids for in-APP platform         
   device_capability_ids = None
-  if device_capabilities != None and creative_type is "IN_APP":
+  if device_capabilities != None and creative_type is constant.IN_APP:
       device_capability_ids = []
       if isinstance(device_capabilities, str):
           device_capabilities = (device_capabilities)
@@ -439,7 +462,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   # Create creatives.
   #Get creative template for native platform
   creative_template_ids = None
-  if creative_type == 'NATIVE':
+  if creative_type == constant.NATIVE:
       creative_template_ids = dfp.get_creative_template.get_creative_template_ids_by_name(creative_template)
 
   #if bidder is None, then bidder will be 'All'
@@ -456,6 +479,11 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   logger.info("creating creatives...")
   creative_configs = get_creative_config(creative_type, bidder_str, order_name, advertiser_id, sizes, num_creatives, creative_template_ids, prefix=unique_id)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
+  
+  # if platform is video, create creative sets
+  if creative_type in (constant.VIDEO, constant.JW_PLAYER):
+      creative_set_configs = dfp.create_creative_sets.create_creative_set_config(creative_ids, sizes, unique_id)
+      creative_ids = dfp.create_creative_sets.create_creative_sets(creative_set_configs)
 
   # Create line items.
   # if line item prefix is not passed, set unique id as lineitem prefix	
@@ -472,9 +500,9 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
   line_item_ids = dfp.create_line_items.create_line_items(line_items_config)
 
   # Associate creatives with line items.
-  logger.info("Creating lica...")
+  logger.info("Creating lineitem creative associations...")
   dfp.associate_line_items_and_creatives.make_licas(line_item_ids,
-    creative_ids)
+    creative_ids, creative_type=creative_type)
 
   logger.info("""
 
@@ -487,13 +515,13 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
 
 def get_creative_file(creative_type):
     creative_file = "creative_snippet_openwrap.html"
-    if creative_type == "WEB":
+    if creative_type == constant.WEB:
         creative_file = "creative_snippet_openwrap.html"
-    elif creative_type == "WEB_SAFEFRAME":
+    elif creative_type == constant.WEB_SAFEFRAME:
         creative_file = "creative_snippet_openwrap_sf.html"
-    elif creative_type == "AMP":
+    elif creative_type == constant.AMP:
         creative_file = "creative_snippet_openwrap_amp.html"
-    elif creative_type == "IN_APP":
+    elif creative_type == constant.IN_APP:
         creative_file = "creative_snippet_openwrap_in_app.html"
 
     return creative_file
@@ -534,10 +562,13 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code, sizes
 
   # Set DFP targeting for custom targetting passed in settings.py
   key_gen_obj.set_custom_targeting(custom_targeting)
-  #do not set platform targeting for inapp
-  if creative_type is not 'IN_APP':
+ 
+  #do not set platform targeting for inapp,jwplayer
+  if creative_type not in (constant.IN_APP, constant.JW_PLAYER):
       key_gen_obj.set_platform_targetting()
-      
+
+  if creative_type is constant.JW_PLAYER:
+      key_gen_obj.set_jwplayer_key()
 
   line_items_config = []
 
@@ -589,11 +620,15 @@ def get_creative_config(creative_type, bidder_str, order_name, advertiser_id, si
     creative_template_ids, prefix):
 
     creative_configs= []
-    if creative_type == 'NATIVE':
+    if creative_type == constant.NATIVE:
         creative_configs = dfp.create_creatives.create_creative_configs_for_native(advertiser_id, creative_template_ids, num_creatives, prefix)
+    elif creative_type == constant.VIDEO:
+        creative_configs = dfp.create_creatives.create_creative_configs_for_video(advertiser_id, sizes, prefix, constant.VIDEO_VAST_URL, constant.VIDEO_DURATION)
+    elif creative_type == constant.JW_PLAYER:
+        creative_configs = dfp.create_creatives.create_creative_configs_for_video(advertiser_id, sizes, prefix, constant.JWP_VAST_URL, constant.JWP_DURATION)
     else:
         use_safe_frame = False
-        if creative_type == "WEB_SAFEFRAME":
+        if creative_type == constant.WEB_SAFEFRAME:
             use_safe_frame = True
         creative_file = get_creative_file(creative_type)
         creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
@@ -604,17 +639,17 @@ def get_creative_config(creative_type, bidder_str, order_name, advertiser_id, si
 def get_unique_id(creative_type):
 
     uid = shortuuid.uuid()
-    if creative_type in ('WEB', 'WEB_SAFEFRAME'):
+    if creative_type in (constant.WEB, constant.WEB_SAFEFRAME):
         uid = u'DISPLAY_{}'.format(uid)
-    if creative_type is 'AMP':
+    if creative_type is constant.AMP:
         uid = u'AMP_{}'.format(uid)
-    if creative_type is 'IN_APP':
+    if creative_type is constant.IN_APP:
         uid = u'INAPP_{}'.format(uid)
-    if creative_type is 'NATIVE':
+    if creative_type is constant.NATIVE:
         uid = u'NATIVE_{}'.format(uid)
-    if creative_type is 'VIDEO':
+    if creative_type is constant.VIDEO:
         uid = u'VIDEO_{}'.format(uid)
-    if creative_type is 'JWPLAYER':
+    if creative_type is constant.JW_PLAYER:
         uid = u'JWP_{}'.format(uid)
     return uid
 
@@ -648,21 +683,19 @@ def load_price_csv(filename, creative_type):
     #read currency conversion flag
     currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', False)
 
-    # we are not converting in case of AMP platform, add more platforms in condition if required
-    if creative_type not in ('AMP', 'IN_APP') and currency_exchange:
+    # Currency module/CURRENCY_EXCHANGE is applicable for web and native platform
+    if creative_type in (constant.WEB, constant.WEB_SAFEFRAME, constant.NATIVE) and currency_exchange:
         network = get_dfp_network()
-        print("network currency :", network.currencyCode)
+        print("Network currency :", network.currencyCode)
         exchange_rate = get_exchange_rate(network.currencyCode)
 
-    print("currency exchange rate:", exchange_rate)
+    print("Currency exchange rate:", exchange_rate)
     #currency rate handling till here
     with open(filename, 'r') as csvfile:
         preader = csv.reader(csvfile)
         next(preader)  # skip header row
         for row in preader:
                 print(row)
-                order_name = row[0]
-                advertiser = row[1]
                 start_range = float(row[2])
                 end_range = float(row[3])
                 granularity = row[4]
@@ -734,24 +767,27 @@ def main():
 
   num_placements = 0
   placements = getattr(settings, 'DFP_TARGETED_PLACEMENT_NAMES', None)
+  placements_print = str(placements)
   if placements is None:
     placements = []
+    placements_print = "RON"
 
   # if no placements are specified, we wil do run of network which is
   #   effectively one placement
   num_placements = len(placements)
   if num_placements == 0:
       num_placements = 1
-
+      placements_print = "RON"
   creative_type = getattr(settings, 'OPENWRAP_CREATIVE_TYPE', None)
   if creative_type is None:
-    creative_type = "WEB"
-  elif creative_type not in ["WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "NATIVE"]:
+    creative_type = constant.WEB
+  elif creative_type not in [constant.WEB, constant.WEB_SAFEFRAME, constant.AMP, constant.IN_APP, 
+    constant.NATIVE, constant.VIDEO, constant.JW_PLAYER]:
     raise BadSettingException('Unknown OPENWRAP_CREATIVE_TYPE: {0}'.format(creative_type))
 
 
   sizes = getattr(settings, 'DFP_PLACEMENT_SIZES', None)
-  if creative_type != 'NATIVE':
+  if creative_type != constant.NATIVE:
     if sizes is None:
         raise MissingSettingException('DFP_PLACEMENT_SIZES')
     elif len(sizes) < 1:
@@ -771,7 +807,7 @@ def main():
   
   # read creative template for native Line-items
   creative_template = None
-  if creative_type == "NATIVE":
+  if creative_type == constant.NATIVE:
       creative_template = getattr(settings, 'OPENWRAP_CREATIVE_TEMPLATE', None)
       if creative_template is None:
         raise MissingSettingException('OPENWRAP_CREATIVE_TEMPLATE')    
@@ -791,13 +827,9 @@ def main():
   device_categories = getattr(settings, 'DFP_DEVICE_CATEGORIES', None)
   if device_categories is not None and not isinstance(device_categories, (list, tuple, str)):
        raise BadSettingException('DFP_DEVICE_CATEGORIES')
-
-  #default device categories to None when creative_type is IN-APP
-  if device_categories is not None and creative_type is 'IN_APP':
-    device_categories = None
-      
+    
   device_capabilities = None
-  if creative_type is 'IN_APP':
+  if creative_type is constant.IN_APP:
       device_capabilities = ('Mobile Apps', 'MRAID v1', 'MRAID v2')
       
   roadblock_type = getattr(settings, 'DFP_ROADBLOCK_TYPE', 'ONE_OR_MORE')
@@ -834,12 +866,22 @@ def main():
   for p in prices:
       prices_summary.append(p['rate'])
 
-  #if creative_type is in-app set roadblock type to 'AS_MANY_AS_POSSIBLE', bidder code to None and custom_targetting to None
-  if creative_type == 'IN_APP':
+  # set bidder_code, custom_targetting, device categories to None when creative_type is IN-APP, JW_PLAYER
+  # default roadblock_type to ONE_OR_MORE when creative_type is VIDEO, JW_PLAYER
+  # default roadblock type to 'AS_MANY_AS_POSSIBLE' when creative_type is in-app 
+
+  if creative_type == constant.IN_APP:
       roadblock_type = 'AS_MANY_AS_POSSIBLE'
       bidder_code = None
       custom_targeting = None
-
+      device_categories = None
+  elif creative_type == constant.JW_PLAYER:
+      roadblock_type = 'ONE_OR_MORE'
+      bidder_code = None
+      custom_targeting = None
+      device_categories = None
+  elif creative_type == constant.VIDEO:
+      roadblock_type = 'ONE_OR_MORE'
       
   logger.info(
     u"""
@@ -850,12 +892,12 @@ def main():
       {name_start_format}Advertiser Type{format_end}: {value_start_format}{advertiser_type}{format_end}
       {name_start_format}LineItem Type{format_end}: {value_start_format}{lineitem_type}{format_end}
       {name_start_format}LineItem Prefix{format_end}: {value_start_format}{lineitem_prefix}{format_end}
+      {name_start_format}Creative Type{format_end} = {value_start_format}{creative_type}{format_end}
 
     Line items will have targeting:
       {name_start_format}rates{format_end} = {value_start_format}{prices_summary}{format_end}
       {name_start_format}bidders{format_end} = {value_start_format}{bidder_code}{format_end}
       {name_start_format}placements{format_end} = {value_start_format}{placements}{format_end}
-      {name_start_format}creative type{format_end} = {value_start_format}{creative_type}{format_end}
       {name_start_format}custom targeting{format_end} = {value_start_format}{custom_targeting}{format_end}
       {name_start_format}same advertiser exception{format_end} = {value_start_format}{same_adv_exception}{format_end}
       {name_start_format}device categories{format_end} = {value_start_format}{device_categories}{format_end}
@@ -868,11 +910,11 @@ def main():
       advertiser_type=advertiser_type,
       lineitem_type=lineitem_type,
       lineitem_prefix=lineitem_prefix,
+      creative_type=creative_type,
       user_email=user_email,
       prices_summary=prices_summary,
       bidder_code=bidder_code,
-      placements=placements,
-      creative_type=creative_type,
+      placements=placements_print,
       sizes=sizes,
       custom_targeting=custom_targeting,
       same_adv_exception=same_adv_exception,

@@ -137,4 +137,8 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
   if ad_unit_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedAdUnits'] = [{'adUnitId': id} for id in ad_unit_ids]
 
+  if creative_type in ('VIDEO', 'JWPLAYER'):
+    line_item_config['environmentType'] = 'VIDEO_PLAYER'
+    line_item_config['targeting']['requestPlatformTargeting'] = {'targetedRequestPlatforms': ['VIDEO_PLAYER']}
+     
   return line_item_config
