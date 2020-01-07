@@ -95,6 +95,7 @@ Setting | Description | Type | Default
 `DFP_SAME_ADV_EXCEPTION` | Whether to set the "Same Advertiser Exception" on line items. Currently it only works for OpenWrap | bool | `False`
 `DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item. Valid Values are: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | string or array of string | None
 `DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool. Valid values are: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE' | string | None
+`LINE_ITEM_PREFIX` | The prefix to be added in line-item name | string | None
 `OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays e.g.: `[("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))]` | None
 `CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent | bool | `False`
 
