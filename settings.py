@@ -145,9 +145,10 @@ OPENWRAP_CREATIVE_TEMPLATE = 'ganeshformat'
 
 # Optional
 # Openwrap currency conversion
-# This option if set, will convert rate to network's currency, default value is false
-# This flag is applicable for WEB, WEB_SAFEFRAME and NATIVE only
-#CURRENCY_EXCHANGE = True
+# This option if set, will convert rate to network's currency, 
+# Like the existing tool, default value is True for all platforms
+# and you can set it to false for WEB, WEB_SAFEFRAME and NATIVE only
+CURRENCY_EXCHANGE = False
 
 #########################################################################
 

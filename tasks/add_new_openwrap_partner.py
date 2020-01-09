@@ -109,7 +109,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         self.get_custom_targeting = []
 
     def set_bidder_value(self, bidder_code):
-        print("Setting bidder value to {0}".format(bidder_code))
+        logger.info("Setting bidder value to {0}".format(bidder_code))
 
         if bidder_code == None:
             self.bidder_criteria = None
@@ -680,16 +680,20 @@ def get_exchange_rate(currency_code):
 def load_price_csv(filename, creative_type):
     buckets = []
     exchange_rate = 1
+    
     #read currency conversion flag
-    currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', False)
-
+    currency_exchange = True
+  
     # Currency module/CURRENCY_EXCHANGE is applicable for web and native platform
-    if creative_type in (constant.WEB, constant.WEB_SAFEFRAME, constant.NATIVE) and currency_exchange:
+    if creative_type in (constant.WEB, constant.WEB_SAFEFRAME, constant.NATIVE):
+        currency_exchange = getattr(settings, 'CURRENCY_EXCHANGE', True)
+
+    if currency_exchange:
         network = get_dfp_network()
-        print("Network currency :", network.currencyCode)
+        logger.info("Network currency : %s", network.currencyCode)
         exchange_rate = get_exchange_rate(network.currencyCode)
 
-    print("Currency exchange rate:", exchange_rate)
+    logger.info("Currency exchange rate: {}".format(exchange_rate))
     #currency rate handling till here
     with open(filename, 'r') as csvfile:
         preader = csv.reader(csvfile)
