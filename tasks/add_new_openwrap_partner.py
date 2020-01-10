@@ -40,6 +40,7 @@ from tasks.price_utils import (
   num_to_micro_amount,
   micro_amount_to_num,
   num_to_str,
+  round_ceil,
 )
 from tasks.dfp_utils import (
   TargetingKeyGen,
@@ -336,8 +337,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
                             temp = round(temp, 1)
                         else:
                             temp = round(temp, 2)
-                        #CreatePubmaticLineItems::lineItemLogger("--V=".$g."--\n");
-
+                        
                         if v+g > end_index and round(v+g,2) != round(end_index,2):
                             subCustomValueArray.append("{0:.2f}".format(temp))
                             #logger.debug("----Third---- Custom criteria for Line Item is =  %.2f", subCustomValueArray[-1])
@@ -588,7 +588,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code, sizes
         bidder_str = "_".join(bidder_str)
      
     # Autogenerate the line item name. (prefix_rate)
-    line_item_name = '{}_{}'.format(lineitem_prefix, round(price['rate'],2) )
+    line_item_name = '{}_{}'.format(lineitem_prefix, price_str )
 
     # Set DFP custom targeting for key `pwtecp`
     key_gen_obj.set_price_value(price)
@@ -597,7 +597,7 @@ def create_line_item_configs(prices, order_id, placement_ids, bidder_code, sizes
       name=line_item_name,
       order_id=order_id,
       placement_ids=placement_ids,
-      cpm_micro_amount=num_to_micro_amount(price['rate']),
+      cpm_micro_amount=num_to_micro_amount(round_ceil(price['rate'],2)),
       sizes=sizes,
       key_gen_obj=key_gen_obj,
       lineitem_type=lineitem_type,
