@@ -752,8 +752,8 @@ def validateCSVValues(start_range, end_range, granularity, rate_id):
     if end_range > 999:
         raise BadSettingException('End range can not be more then 999. Please correct the csv and try again.')
     
-    if granularity <= 0:
-        raise BadSettingException('Zero or negative value is not accepted as granularity. Please correct the csv and try again')
+    if granularity == 0:
+        raise BadSettingException('Zero is not accepted as granularity. Please correct the csv and try again')
 
 class color:
    PURPLE = '\033[95m'
