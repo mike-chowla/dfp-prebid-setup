@@ -249,6 +249,10 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
             'children': [price_set]
         }
 
+        #pwtpid
+        if self.bidder_criteria:
+            top_set['children'].append(self.bidder_criteria)
+
         # dont set other targetting for JW Player
         if self.creative_type is not constant.JW_PLAYER:
             
@@ -258,10 +262,6 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
             #pwtplt
             if self.platform_criteria:
                 top_set['children'].append(self.platform_criteria)
-            
-            #pwtpid
-            if self.bidder_criteria:
-                top_set['children'].append(self.bidder_criteria)
 
             #custom targetting
             if len(self.custom_targeting) > 0:
@@ -699,6 +699,9 @@ def load_price_csv(filename, creative_type):
         preader = csv.reader(csvfile)
         next(preader)  # skip header row
         for row in preader:
+                # ignore extra lines or spaces
+                if row == [] or row[0].strip() == "":
+                    continue
                 print(row)
                 
                 try:
@@ -905,7 +908,7 @@ def main():
       device_categories = None
   elif creative_type == constant.JW_PLAYER:
       roadblock_type = 'ONE_OR_MORE'
-      bidder_code = None
+      bidder_code = ['pubmatic']
       custom_targeting = None
       device_categories = None
   elif creative_type == constant.VIDEO:
