@@ -700,13 +700,18 @@ def load_price_csv(filename, creative_type):
         next(preader)  # skip header row
         for row in preader:
                 print(row)
-                start_range = float(row[2])
-                end_range = float(row[3])
-                granularity = row[4]
-                rate_id = int(row[5])
-
-                if granularity != "-1":
-                    granularity = float(granularity)
+                
+                try:
+                    start_range = float(row[2])
+                    end_range = float(row[3])
+                    granularity = float(row[4])
+                    rate_id = int(row[5])
+                except ValueError:
+                    raise BadSettingException('Start range, end range, granularity and rate id should be number. Please correct the csv and try again.')
+              
+                validateCSVValues(start_range, end_range, granularity, rate_id)
+                
+                if granularity != -1:
                     i = start_range
                     while i < end_range:
                         a = round(i + granularity,2)
@@ -730,6 +735,25 @@ def load_price_csv(filename, creative_type):
                      })
 
     return buckets
+
+def validateCSVValues(start_range, end_range, granularity, rate_id):
+    if start_range < 0 or end_range < 0 :
+        raise BadSettingException('Start range and end range can not be negative. Please correct the csv and try again.')
+    
+    if start_range > end_range:
+        raise BadSettingException('Start range can not be more than end range. Please correct the csv and try again.')
+    
+    if rate_id not in (1,2):
+        raise BadSettingException('Rate id can only be 1 or 2. Please correct the csv and try again')
+    
+    if start_range < 0.01 and granularity == 0.01:
+        raise BadSettingException('Start range can not be less than 0.01 for granularity 0.01, either increase granularity or start range in csv.')
+    
+    if end_range > 999:
+        raise BadSettingException('End range can not be more then 999. Please correct the csv and try again.')
+    
+    if granularity <= 0:
+        raise BadSettingException('Zero or negative value is not accepted as granularity. Please correct the csv and try again')
 
 class color:
    PURPLE = '\033[95m'
