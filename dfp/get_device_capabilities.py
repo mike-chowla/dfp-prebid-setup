@@ -12,9 +12,9 @@ from dfp.client import get_client
 logger = logging.getLogger(__name__)
 
 
-def get_device_categories():
+def get_device_capabilities():
   """
-  Gets Device Categories.
+  Gets Device capabilities.
 
   Args:
     order_id(str): the id of the DFP orderrd
@@ -25,22 +25,22 @@ def get_device_categories():
   dfp_client = get_client()
   report_downloader = dfp_client.GetDataDownloader(version='v201911')
 
-  device_query = ('SELECT Id, DeviceCategoryName '
-                         'FROM Device_Category ')
+  device_query = ('SELECT Id, DeviceCapabilityName '
+                         'FROM Device_Capability ')
 
   results = report_downloader.DownloadPqlResultToList(device_query)
-  category_map = {}
+  capability_map = {}
 
   # Build associative array mapping category to id
   for d in results:
       # Skips the header row
       if isinstance(d[0],int):
-          category_map[d[1]] = d[0]
+          capability_map[d[1]] = d[0]
 
-  return category_map
+  return capability_map
 
 def main():
-  cm = get_device_categories()
+  cm = get_device_capabilities()
   print(cm)
 
 if __name__ == '__main__':

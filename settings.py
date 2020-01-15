@@ -84,6 +84,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 #    Valid Values: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet'}
 #    Defaults to no device category targeting
 #    Currently supported for OpenWrap Only
+#    Not applicable for "IN_APP" and "JWPLAYER"
 #DFP_DEVICE_CATEGORIES = ['Desktop']
 
 # Optional
@@ -103,8 +104,8 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 # PREBID/OPENWRAP SETTINGS
 #########################################################################
 
-# OpenWrap: you can specify an array to target multiple bidders
-#  with one line item
+# OpenWrap: you can specify an array to target multiple bidders with one line item
+# not applicable for JWPLAYER, IN_APP
 PREBID_BIDDER_CODE = ["pubmatic"]
 #
 # Prebid line item generator only accepts a single value
@@ -121,28 +122,35 @@ PREBID_BIDDER_CODE = ["pubmatic"]
 #  'increment': 0.10,
 #}
 
-# OpenWrap: Buckets are specified in a CSV fileself
+# OpenWrap: Buckets are specified in a CSV file
 #  Same file format as the PubMatic Line Item tool
 #  Order and advertiser name from csv are ignored
 OPENWRAP_BUCKET_CSV = 'LineItem.csv'
 
 # Optional
 # OpenWrap: Set custom line item targeting values
+# Not applicable for "IN_APP" and "JWPLAYER"
 #OPENWRAP_CUSTOM_TARGETING = [
 #    ("a", "IS", ("1", "2", "3")),
 #    ("b", "IS_NOT", ("4", "5", "6")),
 #]
 
 # OpenWrap Creative Type
-#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP"
+#  One of "WEB", "WEB_SAFEFRAME", "AMP", "IN_APP", "NATIVE", "VIDEO", "JWPLAYER"
 #  Defaults to WEB
 #OPENWRAP_CREATIVE_TYPE = "WEB"
 
+# Creative Template 
+# Mandatory for Native creative type
+# you can specify an array for multiple creative templates
+OPENWRAP_CREATIVE_TEMPLATE = 'ganeshformat'
+
 # Optional
 # Openwrap currency conversion
-# This option if set, will convert rate to network's currency, default value is false
-# This flag is currently applicable for web only
-#CURRENCY_EXCHANGE = True
+# This option if set, will convert rate to network's currency, 
+# Like the existing tool, default value is True for all platforms
+# and you can set it to false for WEB, WEB_SAFEFRAME and NATIVE only
+CURRENCY_EXCHANGE = False
 
 #########################################################################
 

@@ -21,7 +21,7 @@ def create_creatives(creatives):
   """
   dfp_client = get_client()
   creative_service = dfp_client.GetService('CreativeService',
-    version='v201908')
+    version='v201911')
   creatives = creative_service.createCreatives(creatives)
 
   # Return IDs of created line items.
@@ -141,3 +141,57 @@ def create_duplicate_creative_configs(bidder_code, order_name, advertiser_id, si
         creative_configs.append(config)
   return creative_configs
 
+def create_creative_configs_for_native(advertiser_id,creative_template_ids,
+  num_creatives=1, prefix=None):
+
+  creative_configs = []
+  for template_id in creative_template_ids:
+      for creative_num in range(1, num_creatives + 1):
+        config = create_creative_config_native(
+          name= "{}_{}_native".format(prefix, template_id),
+          advertiser_id=advertiser_id,
+          creative_template_id=template_id,
+        )
+        creative_configs.append(config)
+      
+  return creative_configs
+  
+
+def create_creative_config_native(name, advertiser_id, creative_template_id):
+  creative = {
+    'xsi_type': 'TemplateCreative',
+    'name': name,
+    'advertiserId': advertiser_id,
+    'size': {
+      'width': '1', 
+      'height': '1',
+      'isAspectRatio': False
+    },
+    'creativeTemplateId': creative_template_id,
+    'destinationUrl': 'http://dummyURL.com',
+    'isSafeFrameCompatible': True,
+    'isNativeEligible': True
+  }
+  return creative
+
+# This method creates creative config of type VastRedirectCreative
+def create_creative_configs_for_video(advertiser_id, sizes, prefix, vast_url, duration):
+  
+  creative_configs = []
+
+  for size in sizes:
+    name = '{prefix}_{width}x{height}_VASTCREATIVE'.format(
+          prefix=prefix,width=size["width"], height=size["height"])
+    
+    creative = {
+      'xsi_type': 'VastRedirectCreative',
+      'name': name,
+      'advertiserId': advertiser_id,
+      'size': size,
+      'vastXmlUrl': vast_url,
+      'duration' : duration,
+      'vastRedirectType' : 'LINEAR'
+    }
+    creative_configs.append(creative)
+    
+  return creative_configs

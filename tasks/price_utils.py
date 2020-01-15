@@ -1,3 +1,4 @@
+from math import ceil
 
 def num_to_micro_amount(num, precision=2):
   """
@@ -102,3 +103,8 @@ def get_prices_summary_string(prices_array, precision=2):
       )
 
   return summary
+
+
+def round_ceil(num, round=2):
+  p = 10 ** round
+  return ceil(num * p) / float(p)

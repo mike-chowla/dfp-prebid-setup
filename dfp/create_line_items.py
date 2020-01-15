@@ -1,7 +1,10 @@
-
+import logging
 from googleads import ad_manager
 
 from dfp.client import get_client
+
+
+logger = logging.getLogger(__name__)
 
 def create_line_items(line_items):
   """
@@ -13,19 +16,21 @@ def create_line_items(line_items):
     an array: an array of created line item IDs
   """
   dfp_client = get_client()
-  line_item_service = dfp_client.GetService('LineItemService', version='v201908')
+  line_item_service = dfp_client.GetService('LineItemService', version='v201911')
   line_items = line_item_service.createLineItems(line_items)
 
   # Return IDs of created line items.
   created_line_item_ids = []
   for line_item in line_items:
     created_line_item_ids.append(line_item['id'])
+    logger.info(u'Created line item with name "{name}".'.format(name=line_item['name']))
   return created_line_item_ids
 
 
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
-                            lineitem_type='PRICE_PRIORITY',currency_code='USD', same_adv_exception=False, device_categories=None,
-                            roadblock_type = 'ONE_OR_MORE'):
+                            lineitem_type='PRICE_PRIORITY',currency_code='USD', creative_type = None, creative_template_ids = None, 
+                            same_adv_exception=False, device_categories=None,
+                            device_capabilities = None,roadblock_type = 'ONE_OR_MORE'):
   """
   Creates a line item config object.
 
@@ -41,7 +46,11 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     key_gen_obj (obj): targeting key gen object
     lineitem_type (str): the type of line item('PRICE_PRIORTY', 'HOUSE' or 'NETWORK')
     currency_code (str): the currency code (e.g. 'USD' or 'EUR')
+    creative_type (str): type of creative, for differentiating native
+    creative_template_ids (arr): an array of creative template IDs required for Native
     same_adv_exception (bool) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#disablesameadvertisercompetitiveexclusion
+    device_categories
+    device_capabilities
     roadblock_type (str) : https://developers.google.com/ad-manager/api/reference/v201911/LineItemService.LineItem.html#roadblockingtype
  
   Returns:
@@ -51,10 +60,24 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
   # Set up sizes.
   creative_placeholders = []
 
-  for size in sizes:
-    creative_placeholders.append({
-      'size': size
-    })
+ # creative placeholder for native
+  if creative_type == 'NATIVE':
+    for id in creative_template_ids:
+      creative_placeholders.append(
+        {
+          'size': {
+            'width': 1,
+            'height': 1
+          },
+          'creativeTemplateId': id,
+          'creativeSizeType': 'NATIVE'
+        }
+      )  
+  else:
+    for size in sizes:
+      creative_placeholders.append({
+        'size': size
+      })
 
   top_set = key_gen_obj.get_dfp_targeting()
 
@@ -100,10 +123,22 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
 
       line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
 
+  #device capability targetring
+  if device_capabilities != None and len(device_capabilities) > 0:
+      dev_cap_targeting = []
+      for dc in device_capabilities:
+          dev_cap_targeting.append({'id': str(dc)})
+
+      line_item_config['targeting']['technologyTargeting'] = {'deviceCapabilityTargeting': {'targetedDeviceCapabilities': dev_cap_targeting}}
+
   if placement_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedPlacementIds'] = placement_ids
 
   if ad_unit_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedAdUnits'] = [{'adUnitId': id} for id in ad_unit_ids]
 
+  if creative_type in ('VIDEO', 'JWPLAYER'):
+    line_item_config['environmentType'] = 'VIDEO_PLAYER'
+    line_item_config['targeting']['requestPlatformTargeting'] = {'targetedRequestPlatforms': ['VIDEO_PLAYER']}
+     
   return line_item_config
