@@ -1,141 +1,150 @@
-[![Build Status](https://travis-ci.org/kmjennison/dfp-prebid-setup.svg?branch=master)](https://travis-ci.org/kmjennison/dfp-prebid-setup)
+# Line Item Tool for Prebid, OpenWrap, and GAM
 
-# Setup Tool for Prebid, Openwrap and GAM (previously DFP)
-An automated line item generator for [Prebid.js](http://prebid.org/), Openwrap and Google Ad Manager (previously DFP)
+This Python-based line item generator for [Prebid.js](http://prebid.org/), [OpenWrap](https://community.pubmatic.com/display/OP/OpenWrap), and [Google Ad Manager](https://admanager.google.com/home/), automates setup for new header bidding partners.
 
-## Overview
-When setting up Prebid/Openwrap, your ad ops team often has to create [hundreds of line items](http://prebid.org/adops.html) in Google Ad Manager (GAM).
+> **Note:** Doubleclick for Publishers (DFP) is now called, Google Ad Manager (GAM). If this repository refers to DFP, consider it equal to, GAM.
 
-This tool automates setup for new header bidding partners. You define the advertiser, placements or ad units, and Prebid/Openwrap settings; then, it creates an order with one line item per price level, attaches creatives, sets placement and/or ad units, and Prebid/Openwrap key-value targeting.
+When your ad ops team sets up Prebid/OpenWrap, they often must create hundreds of line items in GAM. Using this tool, your team can now define the settings for:
 
-While this tool covers typical use cases, it might not fit your needs. Check out the [limitations](#limitations) before you dive in.
+* Advertiser.
+* Placements or ad units.
+* Prebid/OpenWrap.
 
-_Note: Doubleclick for Publishers (DFP) was recently renamed to Google Ad Manager (GAM), so this repository may refer to GAM as DFP._
+The Line Item Tool then uses those definitions to:
 
-## Getting Started
+* Create an order with one line item per price level.
+* Attach creatives.
+* Set placement and/or ad units.
+* Set Prebid/OpenWrap key-value targeting.
 
-### Requirements
-* Python version >= 3.6 and a basic knowledge of Python
-* Access to create a service account in the Google Developers Console
-* Admin access to your Google Ad Manager account
+> **Note:** While this tool covers typical use cases, it may not fit your needs. Review the [Limitations](#limitations) before you begin.
 
-### Creating Google Credentials
-_You will need credentials to access your GAM account programmatically. This summarizes steps from [GAM docs](https://developers.google.com/ad-manager/docs/authentication) and the Google Ads Python libary [auth guide](https://github.com/googleads/googleads-python-lib)._
+## Get started
 
-1. If you haven't yet, sign up for a [GAM account](https://admanager.google.com/).
-2. Create Google developer credentials
-   * Go to the [Google Developers Console Credentials page](https://console.developers.google.com/apis/credentials).
-   * On the **Credentials** page, select **Create credentials**, then select **Service account key**.
-   * Select **New service account**, and select JSON key type. You can leave the role blank.
-   * Click **Create** to download a file containing a `.json` private key.
-3. Enable API access to GAM
-   * Sign into your [GAM account](https://admanager.google.com/). You must have admin rights.
-   * In the **Admin** section, select **Global settings**
-   * Ensure that **API access** is enabled.
-   * Click the **Add a service account user** button.
-     * Use the service account email for the Google developer credentials you created above.
-     * Set the role to "Administrator".
-     * Click **Save**.
+You'll need the following to use the Line Item Tool:
 
-### Setting Up
+* Python version >= 3.6 and a basic knowledge of Python.
+* Access to create a service account in the Google Developers Console.
+* Admin access to your Google Ad Manager account.
 
-#### Pre-requisites
-* Installing Python. Python version 3.6 or higher is required.
-* Installing pip. 
+### Create Google Ad Manager credentials
 
-#### Steps
-1. Clone this repository.
-2. Install Python dependencies
-   * Run `pip install -r requirements.txt`
-3. Rename key
-   * Rename the Google credentials key you previously downloaded (`[something].json`) to `key.json` and move it to the root of this repository
-4. Make a copy of `googleads.example.yaml` and name it `googleads.yaml`.
-5. In `googleads.yaml`, set the required fields:
-   * `application_name` is the name of the Google project you created when creating the service account credentials. It should appear in the top-left of the [credentials page](https://console.developers.google.com/apis/credentials).
-   * `network_code` is your GAM network number; e.g., for `https://admanager.google.com/12398712#delivery`, the network code is `12398712`.
+The Line Item Tool requires valid GAM credentials to access your  account. The steps below summarize the steps from the [GAM docs](https://developers.google.com/ad-manager/docs/authentication) and the Google Ads Python libary [auth guide](https://github.com/googleads/googleads-python-lib).
 
-### Verifying Setup
-Let's try it out! From the top level directory, run
+1.  If you haven't done so already, sign up for a [GAM account](https://admanager.google.com/).
+2.  Create Google developer credentials:
+    *   Go to the [Google Developers Console Credentials page](https://console.developers.google.com/apis/credentials).
+    *   On the **Credentials** page, select **Create credentials**, then select **Service account key**.
+    *   Select **New service account**, then select _JSON_ key type. You can leave the _role_ blank.
+    *   Use **Create** to download a file containing a `.json` private key.
+3.  Turn on API access to GAM:
+    *   Sign into your [GAM account](https://admanager.google.com/)—_you must have admin rights_.
+    *   In the **Admin** section, select **Global settings.**
+    *   Turn on **API access** if it isn't already enabled.
+    *   Press the **Add a service account user** button.
+        *   Use the service account email for the Google developer credentials you created in step 2.
+        *   Set the role to, _Administrator_.
+        *   Select **Save**.
 
-`python -m dfp.get_orders`
+### Set up the tool
 
-and you should see all of the orders in your GAM account.
+#### Line Item Tool Prerequisites:
 
-## Creating Line Items for OpenWrap
+*   Python version 3.6 or higher.
+*   Python command line package installer, `pip`.
 
-Modify the following mandatory settings in `settings.py`:
+#### Use the following steps to set up the tool:
 
-Setting | Description | Type
------------- | ------------- | -------------
-`DFP_ORDER_NAME` | What you want to call your new GAM order | string
-`DFP_USER_EMAIL_ADDRESS` | The email of the GAM user who will be the trafficker for the created order | string
-`DFP_ADVERTISER_NAME` | The name of the GAM advertiser for the created order | string
-`DFP_TARGETED_PLACEMENT_NAMES` | The names of GAM placements the line items should target.  Use empty array for `Run Of Network` | array of strings
-`DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
-`PREBID_BIDDER_CODE` | The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner.  Set to `None` to generate line items for all partners.  Use array of strings if the line should match multiple partners | string or array of strings.
-`OPENWRAP_CREATIVE_TYPE` | Which type of creative to use.  Options are `WEB`, `WEB_SAFEFRAME`, `AMP`, `IN_APP`, `NATIVE`, `VIDEO`, `JWPLAYER` | string
-`OPENWRAP_BUCKET_CSV` | CSV that that list buckets and price granularity; used to set `pwtecp` targeting for each line item | string
-`OPENWRAP_CREATIVE_TEMPLATE` | The creative template name for Native Lineitems. This is only required when  `OPENWRAP_CREATIVE_TYPE`=`NATIVE` | string
+1.  Clone this repository.
+2.  Install Python dependencies by running:
+    > `pip install -r requirements.txt`
+3.  Rename key:
+    *   Rename the Google credentials key you downloaded in step 2 above (`[something].json`), to `key.json`.
+    *   Now move it to the root of this repository.
+4.  Make a copy of `googleads.example.yaml` and rename it, `googleads.yaml`.
+5.  In `googleads.yaml`, set these required fields:
+    *   `application_name` - the Google project you named while creating GAM credentials above. It should appear in the top-left of the [credentials page](https://console.developers.google.com/apis/credentials).
+    *   `network_code` - your GAM network number. For example, in `https://admanager.google.com/12398712#delivery`, the network code is `12398712`.
 
-Then, from the root of the repository, run:
+#### Verifying set up
 
-`python -m tasks.add_new_openwrap_partner`
+To test your set up, from the top-level directory run:
 
-You should be all set! Review your order, line items, and creatives to make sure they are correct. Then, approve the order in DFP.
+> `python -m dfp.get_orders`
 
-*Note: GAM might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
+If successful, it returns all the orders in your GAM account.
 
-## Additional optional settings
+## Create Line Items for OpenWrap
 
-Setting | Description | Type | Default
------------- | ------------- | ------------- | -------------
-`DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST` | Whether we should create the advertiser with `DFP_ADVERTISER_NAME` in GAM if it does not exist | bool | `False`
-`DFP_USE_EXISTING_ORDER_IF_EXISTS` | Whether we should modify an existing order if one already exists with name `DFP_ORDER_NAME` | bool | `False`
-`DFP_NUM_CREATIVES_PER_LINE_ITEM` | The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. | int | the length of setting `DFP_TARGETED_PLACEMENT_NAMES`
-`DFP_CURRENCY_CODE` | The currency to use in line items | string | `'USD'`
-`DFP_SAME_ADV_EXCEPTION` | Whether to set the "Same Advertiser Exception" on line items. Currently it only works for OpenWrap | bool | `False`
-`DFP_DEVICE_CATEGORIES` | Sets device category targetting for a Line item. Valid Values are: 'Connected TV', 'Desktop', 'Feature Phone', 'Set Top Box', 'Smartphone', 'Tablet' | string or array of string | None
-`DFP_ROADBLOCK_TYPE` |This option is equivalent to 'Display Creatives' in old LI tool. Valid values are: 'ONE_OR_MORE', 'AS_MANY_AS_POSSIBLE' | string | None
-`LINE_ITEM_PREFIX` | The prefix to be added in line-item name | string | None
-`OPENWRAP_CUSTOM_TARGETING` | Array of additional targeting rules per line item | array of arrays e.g.: `[("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))]` | None
-`CURRENCY_EXCHANGE` | This option is equivalent to 'Currency Module' in old LI tool. This option if set, will convert the rate to network's currency equivalent. This is applicable for `WEB`, `WEB_SAFEFRAME` and `NATIVE` only | bool | `True`
+1. Change the following mandatory settings in `settings.py`:
 
+|**Setting**|**Description**|**Type**|
+|:----------|:--------------|:-------|
+|`DFP_ORDER_NAME`|The name of your new GAM order.|string|
+|`DFP_USER_EMAIL_ADDRESS`|The email of the GAM user acting as trafficker for the new order.|string|
+|`DFP_ADVERTISER_NAME`|The name of the GAM advertiser for the new order.|string|
+|`DFP_TARGETED_PLACEMENT_NAMES`|The names of GAM placements targeted by the line items. Use empty array for, **Run of Network**.|array of strings|
+|`DFP_PLACEMENT_SIZES`|The creative sizes for the targeted placements.|array of objects (for example, `[{'width': '728', 'height': '90'}]`)|
+|`PREBID_BIDDER_CODE`|The value of [`pwtpid`](https://github.com/PubMatic/OpenWrap#wrapper-keys-sent-to-dfp) for this partner. Set to `None` to generate line items for all partners. Use array of strings if the line should match multiple partners.|string or array of strings|
+|`OPENWRAP_CREATIVE_TYPE`|Which type of creative to use.  Options are `WEB`, `WEB_SAFEFRAME`, `AMP`, `IN_APP`, `NATIVE`, `VIDEO`, `JWPLAYER`.|string|
+|`OPENWRAP_BUCKET_CSV`|This CSV lists buckets and price granularity; it sets `pwtecp` targeting for each line item.| string|
+|`OPENWRAP_CREATIVE_TEMPLATE` |The creative template name for Native Lineitems. This is only required when `OPENWRAP_CREATIVE_TYPE`=`NATIVE`. | string |
 
-## Creating Line Items for Prebid
+2. Then, from the root of the repository, run:
+    > `python -m tasks.add_new_openwrap_partner`
+3. Review your order, line items, and creatives for correctness.
+4. Finally, approve the order in GAM.
 
-Modify the following settings in `settings.py`:
+> **Note:** GAM may warn, "Needs creatives," on the order for ~15 minutes after order creation. This warning is usually incorrect and disappears on its own.
 
-Setting | Description | Type
------------- | ------------- | -------------
-`DFP_ORDER_NAME` | What you want to call your new GAM order | string
-`DFP_USER_EMAIL_ADDRESS` | The email of the GAM user who will be the trafficker for the created order | string
-`DFP_ADVERTISER_NAME` | The name of the GAM advertiser for the created order | string
-`DFP_TARGETED_AD_UNIT_NAMES` | The names of GAM ad units the line items should target | array of strings
-`DFP_TARGETED_PLACEMENT_NAMES` | The names of GAM placements the line items should target | array of strings
-`DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
-`PREBID_BIDDER_CODE` | The value of [`hb_bidder`](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings) for this partner | string
-`PREBID_PRICE_BUCKETS` | The [price granularity](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity); used to set `hb_pb` for each line item | object
+### More optional settings
 
-Then, from the root of the repository, run:
+|**Setting**|**Description**|**Type**|**Default**|
+|:----------|:--------------|:-------|:----------|
+|`DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST`|Determines whether the tool creates an advertiser with `DFP_ADVERTISER_NAME` in GAM if it does not already exist.|bool|`False`
+|`DFP_USE_EXISTING_ORDER_IF_EXISTS`|Determines whether to rename an existing order if it matches `DFP_ORDER_NAME.`|bool|`False`|
+|`DFP_NUM_CREATIVES_PER_LINE_ITEM`|The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. |int|Length of setting, `DFP_TARGETED_PLACEMENT_NAMES`|
+|`DFP_CURRENCY_CODE`|National currency to use in line items.|string|`'USD'`|
+|`DFP_SAME_ADV_EXCEPTION`|Determines whether to set the "Same Advertiser Exception" on line items. Currently works only for OpenWrap.|bool|`False`|
+|`DFP_DEVICE_CATEGORIES`|Sets device category targetting for a Line item. Valid values: `Connected TV`, `Desktop`, `Feature Phone`, `Set Top Box`, `Smartphone`, and `Tablet`. Not applicable for 'IN_APP' and 'JWPLAYER'|string or array of strings|None|
+|`DFP_ROADBLOCK_TYPE`|Same as **Display Creatives** in previous Line Item Tool version. Valid values: `ONE_OR_MORE` and `AS_MANY_AS_POSSIBLE`.|string|None|
+|`LINE_ITEM_PREFIX`|The prefix to insert before a line-item name.|string|None|
+|`OPENWRAP_CUSTOM_TARGETING`|Array of extra targeting rules per line item. Not applicable for 'IN_APP' and 'JWPLAYER'|array of arrays (For example, `[("a", "IS", ("1", "2", "3")), ("b", "IS_NOT", ("4", "5", "6"))]`.)|None|
+|`CURRENCY_EXCHANGE`|Same as **Currency Module** in the previous Line Item Tool. When used, this option converts the _rate_ calculated from CSV to the network's currency setting. This is applicable for `WEB`, `WEB_SAFEFRAME` and `NATIVE` only. |bool|True|
 
-`python -m tasks.add_new_prebid_partner`
+## Create Line Items for Prebid
 
-You should be all set! Review your order, line items, and creatives to make sure they are correct. Then, approve the order in GAM.
+1.  Change the following mandatory settings in `settings.py`:
 
-*Note: GAM might show a "Needs creatives" warning on the order for ~15 minutes after order creation. Typically, the warning is incorrect and will disappear on its own.*
+|**Setting**|**Description**|**Type**|
+|:----------|:--------------|:-------|
+|`DFP_ORDER_NAME`|The name of your new GAM order.|string|
+|`DFP_USER_EMAIL_ADDRESS`|Email of the GAM user who will be the trafficker for the new order.|string|
+|`DFP_ADVERTISER_NAME`|Name of the GAM advertiser for the new order.|string|
+|`DFP_TARGETED_AD_UNIT_NAMES`|Names of GAM ad units the line items should target.|array of strings|
+|`DFP_TARGETED_PLACEMENT_NAMES`|Names of GAM placements the line items should target.|array of strings|
+|`DFP_PLACEMENT_SIZES`|Creative sizes for the targeted placements.|array of objects (e.g., `[{'width': '728', 'height': '90'}]`)|
+|`PREBID_BIDDER_CODE`|The value of [`hb_bidder`](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings) for this partner.|string|
+|`PREBID_PRICE_BUCKETS`|[Price granularity](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity); used to set `hb_pb` for each line item|object|
 
-## Additional Settings
+2.  Next, from the root of the repository, run:
+    > `python -m tasks.add_new_prebid_partner`
+3.  Finally, review your order, line items, and creatives to make sure they are correct. Then, approve the order in GAM.
 
-In most cases, you won't need to modify these settings.
+> **Note:** GAM may warn, "Needs creatives" on the order for ~15 minutes after order creation. The warning is usually incorrect and disappears on its own.
 
-Setting | Description | Default
------------- | ------------- | -------------
-`DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST` | Whether we should create the advertiser with `DFP_ADVERTISER_NAME` in GAM if it does not exist | `False`
-`DFP_USE_EXISTING_ORDER_IF_EXISTS` | Whether we should modify an existing order if one already exists with name `DFP_ORDER_NAME` | `False`
-`DFP_NUM_CREATIVES_PER_LINE_ITEM` | The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. | the length of setting `DFP_TARGETED_PLACEMENT_NAMES`
-`DFP_CURRENCY_CODE` | The currency to use in line items. | `'USD'`
-`DFP_LINE_ITEM_FORMAT` | The format for the line item names. | `u'{bidder_code}: HB ${price}'`
+### Extra Settings
+<a name="extra"></a>
+In most cases, you won't need to change these settings.
+
+|**Setting**|**Description**|**Type**|**Default**|
+|:----------|:--------------|:-------|:----------|
+|`DFP_CREATE_ADVERTISER_IF_DOES_NOT_EXIST`|Determines whether to create an advertiser with `DFP_ADVERTISER_NAME` in GAM if one does not exist.|bool|`False`|
+|`DFP_USE_EXISTING_ORDER_IF_EXISTS`|Determines whether to rename an existing order if another matches `DFP_ORDER_NAME.`|bool|`False`|
+|`DFP_NUM_CREATIVES_PER_LINE_ITEM`|The number of duplicate creatives to attach to each line item. Due to GAM limitations, this should be equal to or greater than the number of ad units you serve on a given page. |int|Length of setting, `DFP_TARGETED_PLACEMENT_NAMES`|
+|`DFP_CURRENCY_CODE`|National currency to use in line items.|string|`'USD'`|
+|`DFP_LINE_ITEM_FORMAT`|The format for the line item names.|string|`u'{bidder_code}: HB ${price}'`|
 
 ## Limitations
 
-* This tool does not modify existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it. But you can add new line items in the exisiting order if the flag DFP_USE_EXISTING_ORDER_IF_EXISTS is set.
+*   Line Item Tool does not change existing orders or line items, it only creates them. If you need to make a change to an order, it's easiest to archive the existing order and recreate it. But you can add new line items in the existing order using the setting DFP_USE_EXISTING_ORDER_IF_EXISTS. See [Extra Settings](#extra) above.
