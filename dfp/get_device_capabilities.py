@@ -23,7 +23,7 @@ def get_device_capabilities():
   """
 
   dfp_client = get_client()
-  report_downloader = dfp_client.GetDataDownloader(version='v201911')
+  report_downloader = dfp_client.GetDataDownloader(version='v202002')
 
   device_query = ('SELECT Id, DeviceCapabilityName '
                          'FROM Device_Capability ')
