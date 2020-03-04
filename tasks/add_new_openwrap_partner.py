@@ -628,6 +628,8 @@ def get_creative_config(creative_type, bidder_str, order_name, advertiser_id, si
         creative_configs = dfp.create_creatives.create_creative_configs_for_video(advertiser_id, sizes, prefix, constant.JWP_VAST_URL, constant.JWP_DURATION)
     else:
         use_safe_frame = False
+        if creative_type == constant.AMP:
+            use_safe_frame = True
         if creative_type == constant.WEB_SAFEFRAME:
             use_safe_frame = True
         creative_file = get_creative_file(creative_type)
