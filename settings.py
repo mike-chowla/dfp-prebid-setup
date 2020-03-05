@@ -109,7 +109,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 #PREBID_BIDDER_CODE = ["pubmatic"]
 #
 # Prebid line item generator only accepts a single value
-PREBID_BIDDER_CODE = None
+#PREBID_BIDDER_CODE = None
 
 # Price buckets. This should match your Prebid settings for the partner. See:
 # http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity
