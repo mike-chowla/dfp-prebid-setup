@@ -32,7 +32,8 @@ import dfp.get_device_capabilities
 
 from dfp.exceptions import (
   BadSettingException,
-  MissingSettingException
+  MissingSettingException,
+  DFPException
 )
 from tasks.price_utils import (
   get_prices_array,
@@ -52,7 +53,8 @@ from urllib.request import urlopen
 import json
 import shortuuid
 from dfp.client import get_client
-
+from requests.exceptions import ConnectionError
+from googleads.errors import GoogleAdsServerFault
 
 
 # Colorama for cross-platform support for colored logging.
@@ -897,6 +899,11 @@ def main():
   for p in prices:
       prices_summary.append(p['rate'])
 
+  if len(prices) > constant.LINE_ITEMS_LIMIT:
+      print('\n Error: {} Lineitems will be created. This is exceeding Line items count per order of 450!\n'
+      .format(len(prices))) 
+      return
+
   # set bidder_code, custom_targetting, device categories to None when creative_type is IN-APP, JW_PLAYER
   # default roadblock_type to ONE_OR_MORE when creative_type is VIDEO, JW_PLAYER
   # default roadblock type to 'AS_MANY_AS_POSSIBLE' when creative_type is in-app 
@@ -963,27 +970,35 @@ def main():
     logger.info('Exiting.')
     return
 
-  setup_partner(
-    user_email,
-    advertiser_name,
-    advertiser_type,
-    order_name,
-    placements,
-    sizes,
-    lineitem_type,
-    lineitem_prefix,
-    bidder_code,
-    prices,
-    creative_type,
-    creative_template,
-    num_creatives,
-    currency_code,
-    custom_targeting,
-    same_adv_exception,
-    device_categories,
-    device_capabilities,
-    roadblock_type
-  )
+  try:
+    setup_partner(
+            user_email,
+            advertiser_name,
+            advertiser_type,
+            order_name,
+            placements,
+            sizes,
+            lineitem_type,
+            lineitem_prefix,
+            bidder_code,
+            prices,
+            creative_type,
+            creative_template,
+            num_creatives,
+            currency_code,
+            custom_targeting,
+            same_adv_exception,
+            device_categories,
+            device_capabilities,
+            roadblock_type
+    )
+  except ConnectionError as e:
+      logger.error('\nConnection Error. Please try again after some time! Err: \n{}'.format(e))
+  except GoogleAdsServerFault as e:
+      if "ServerError.SERVER_ERROR" in str(e):
+        logger.error('\n\nDFP Server Error. Please try again after some time! Err: \n{}'.format(e))
+      else:
+        raise DFPException("\n\nError occured while creating Lineitems in DFP: \n {}".format(e))
 
 
 if __name__ == '__main__':

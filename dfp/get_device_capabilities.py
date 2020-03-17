@@ -17,9 +17,9 @@ def get_device_capabilities():
   Gets Device capabilities.
 
   Args:
-    order_id(str): the id of the DFP orderrd
+    None
   Returns:
-    array of line item objects
+    map of device capability to its id
   """
 
   dfp_client = get_client()

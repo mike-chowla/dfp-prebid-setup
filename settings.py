@@ -106,7 +106,7 @@ DFP_USE_EXISTING_ORDER_IF_EXISTS = True
 
 # OpenWrap: you can specify an array to target multiple bidders with one line item
 # not applicable for JWPLAYER, IN_APP
-PREBID_BIDDER_CODE = ["pubmatic"]
+PREBID_BIDDER_CODE = None
 #
 # Prebid line item generator only accepts a single value
 #PREBID_BIDDER_CODE = None
@@ -115,12 +115,12 @@ PREBID_BIDDER_CODE = ["pubmatic"]
 # http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity
 # FIXME: this should be an array of buckets. See:
 # https://github.com/prebid/Prebid.js/blob/8fed3d7aaa814e67ca3efc103d7d306cab8c692c/src/cpmBucketManager.js
-#PREBID_PRICE_BUCKETS = {
-#  'precision': 2,
-#  'min' : 0,
-#  'max' : 20,
-#  'increment': 0.10,
-#}
+PREBID_PRICE_BUCKETS = {
+  'precision': 2,
+  'min' : 0,
+  'max' : 20,
+  'increment': 0.10,
+}
 
 # OpenWrap: Buckets are specified in a CSV file
 #  Same file format as the PubMatic Line Item tool

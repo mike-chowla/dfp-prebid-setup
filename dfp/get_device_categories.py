@@ -17,9 +17,9 @@ def get_device_categories():
   Gets Device Categories.
 
   Args:
-    order_id(str): the id of the DFP orderrd
+	None
   Returns:
-    array of line item objects
+    map of Device Category to its Id
   """
 
   dfp_client = get_client()
