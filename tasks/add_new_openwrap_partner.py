@@ -900,8 +900,8 @@ def main():
       prices_summary.append(p['rate'])
 
   if len(prices) > constant.LINE_ITEMS_LIMIT:
-      print('\n Error: {} Lineitems will be created. This is exceeding Line items count per order of 450!\n'
-      .format(len(prices))) 
+      print('\n Error: {} Lineitems will be created. This is exceeding Line items count per order of {}!\n'
+      .format(len(prices),constant.LINE_ITEMS_LIMIT)) 
       return
 
   # set bidder_code, custom_targetting, device categories to None when creative_type is IN-APP, JW_PLAYER
