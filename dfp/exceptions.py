@@ -17,3 +17,10 @@ class BadSettingException(Exception):
   """
   pass
 
+
+class DFPException(Exception):
+  def __init__(self, message):
+    detailed_message = ('{0}'.format(message))
+    super(DFPException, self).__init__(detailed_message)
+
+
