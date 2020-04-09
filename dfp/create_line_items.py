@@ -2,7 +2,7 @@ import logging
 from googleads import ad_manager
 
 from dfp.client import get_client
-
+import constant
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,21 @@ def create_line_items(line_items):
   """
   dfp_client = get_client()
   line_item_service = dfp_client.GetService('LineItemService', version='v202002')
-  line_items = line_item_service.createLineItems(line_items)
 
+  # GAM API can timeout when creating 400+ line items in one call
+  # Batch calls to prevent timeouts
+  to_create = len(line_items)
+  done = 0
+  created_line_items = []
+  while done < to_create:
+    batch_size = min(to_create - done, constant.LINE_ITEMS_BATCH_SIZE)
+    r = line_item_service.createLineItems(line_items[done:done+batch_size])
+    created_line_items.extend(r)
+    done = done + batch_size
+  
   # Return IDs of created line items.
   created_line_item_ids = []
-  for line_item in line_items:
+  for line_item in created_line_items:
     created_line_item_ids.append(line_item['id'])
     logger.info(u'Created line item with name "{name}".'.format(name=line_item['name']))
   return created_line_item_ids
