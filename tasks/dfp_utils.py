@@ -9,8 +9,37 @@ class TargetingKeyGen():
         return None
 
     def set_bidder_value(self, bidder_code):
-        assert False
-        return None
+        print("Setting bidder value to {0}".format(bidder_code))
+
+        if bidder_code == None:
+            self.bidder_criteria = None
+            return
+
+        if isinstance(bidder_code, (list, tuple)):
+            # Multiple biders for us to OR to other
+            bidder_criteria = []
+            for bc in bidder_code:
+                value_id = self.BidderValueGetter.get_value_id(bc)
+                custom_criteria = {
+                    'xsi_type': 'CustomCriteria',
+                    'keyId': self.bidder_key_id,
+                    'valueIds': [value_id],
+                    'operator': 'IS'
+                }
+                bidder_criteria.append(custom_criteria)
+
+            self.bidder_criteria = {
+                'xsi_type': 'CustomCriteriaSet',
+                'logicalOperator': 'OR',
+                'children': bidder_criteria
+            }
+        else:
+            self.bidder_criteria  = {
+                'xsi_type': 'CustomCriteria',
+                'keyId': self.bidder_key_id,
+                'valueIds': [self.BidderValueGetter.get_value_id(bidder_code) ],
+                'operator': 'IS'
+            }
 
     def set_price_value(self, price_str):
         assert False

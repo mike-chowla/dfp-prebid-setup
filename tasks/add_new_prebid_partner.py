@@ -59,20 +59,17 @@ class PrebidTargetingKeyGen(TargetingKeyGen):
         super().__init__()
 
         # Get DFP key IDs for line item targeting.
-        self.hb_bidder_key_id = get_or_create_dfp_targeting_key('hb_bidder')
+        self.bidder_key_id = get_or_create_dfp_targeting_key('hb_bidder')
         self.hb_pb_key_id = get_or_create_dfp_targeting_key('hb_pb')
 
         # Instantiate DFP targeting value ID getters for the targeting keys.
-        self.HBBidderValueGetter = DFPValueIdGetter('hb_bidder')
+        self.BidderValueGetter = DFPValueIdGetter('hb_bidder')
+        self.bidder_criteria = None
         self.HBPBValueGetter = DFPValueIdGetter('hb_pb')
+
 
         self.hb_bidder_value_id = None
         self.hb_pb_value_id = None
-
-    def set_bidder_value(self, bidder_code):
-        print("Setting bidder value to {0}".format(bidder_code))
-        self.hb_bidder_value_id = self.HBBidderValueGetter.get_value_id(bidder_code)
-        return self.hb_bidder_value_id
 
     def set_price_value(self, price_str):
         self.hb_pb_value_id = self.HBPBValueGetter.get_value_id(price_str)
@@ -82,13 +79,6 @@ class PrebidTargetingKeyGen(TargetingKeyGen):
       # Create key/value targeting for Prebid.
       # https://github.com/googleads/googleads-python-lib/blob/master/examples/dfp/v201802/line_item_service/target_custom_criteria.py
       # create custom criterias
-
-      hb_bidder_criteria = {
-        'xsi_type': 'CustomCriteria',
-        'keyId': self.hb_bidder_key_id,
-        'valueIds': [self.hb_bidder_value_id],
-        'operator': 'IS'
-      }
 
       hb_pb_criteria = {
         'xsi_type': 'CustomCriteria',
@@ -103,8 +93,11 @@ class PrebidTargetingKeyGen(TargetingKeyGen):
       top_set = {
         'xsi_type': 'CustomCriteriaSet',
         'logicalOperator': 'AND',
-        'children': [hb_bidder_criteria, hb_pb_criteria]
+        'children': [hb_pb_criteria]
       }
+
+      if self.bidder_criteria:
+        top_set['children'].append(self.bidder_criteria)
 
       return top_set
 
@@ -131,8 +124,14 @@ def setup_partner(user_email, advertiser_name, order_name, placements, ad_units,
   order_id = dfp.create_orders.create_order(order_name, advertiser_id, user_id)
 
   # Create creatives.
+  bidder_str = bidder_code
+  if bidder_str == None:
+      bidder_str = "All"
+  elif isinstance(bidder_str, (list, tuple)):
+      bidder_str = "_".join(bidder_str)
+
   creative_configs = dfp.create_creatives.create_duplicate_creative_configs(
-      bidder_code, order_name, advertiser_id, num_creatives, video_ad_type, redirect_url)
+      bidder_str, order_name, advertiser_id, num_creatives, video_ad_type, redirect_url)
   creative_ids = dfp.create_creatives.create_creatives(creative_configs)
 
   # Create line items.
@@ -237,6 +236,12 @@ def create_line_item_configs(prices, order_id, placement_ids, ad_unit_ids, bidde
   # The DFP targeting value ID for this `hb_bidder` code.
   key_gen_obj.set_bidder_value(bidder_code)
 
+  bidder_str = bidder_code
+  if bidder_str == None:
+      bidder_str = "All"
+  elif isinstance(bidder_str, (list, tuple)):
+      bidder_str = "_".join(bidder_str)
+
   line_items_config = []
   for price in prices:
 
@@ -244,7 +249,7 @@ def create_line_item_configs(prices, order_id, placement_ids, ad_unit_ids, bidde
 
     # Autogenerate the line item name.
     line_item_name = line_item_format.format(
-      bidder_code=bidder_code,
+      bidder_code=bidder_str,
       price=price_str
     )
 
@@ -368,8 +373,8 @@ def main():
   )
 
   bidder_code = getattr(settings, 'PREBID_BIDDER_CODE', None)
-  if bidder_code is None:
-    raise MissingSettingException('PREBID_BIDDER_CODE')
+  if bidder_code is not None and not isinstance(bidder_code, (list, tuple, str)):
+      raise BadSettingException('PREBID_BIDDER_CODE')
 
   price_buckets = getattr(settings, 'PREBID_PRICE_BUCKETS', None)
   if price_buckets is None:

@@ -65,7 +65,7 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         super().__init__()
 
         # Get DFP key IDs for line item targeting.
-        self.pwtpid_key_id = get_or_create_dfp_targeting_key('pwtpid', key_type='PREDEFINED')  # bidder
+        self.bidder_key_id = get_or_create_dfp_targeting_key('pwtpid', key_type='PREDEFINED')  # bidder
         self.pwtbst_key_id = get_or_create_dfp_targeting_key('pwtbst', key_type='PREDEFINED')  # is pwt
         self.pwtcep_key_id = get_or_create_dfp_targeting_key('pwtecp', key_type='FREEFORM') # price
         self.pwtplt_key_id = get_or_create_dfp_targeting_key('pwtplt', key_type='PREDEFINED') # platform
@@ -77,44 +77,10 @@ class OpenWrapTargetingKeyGen(TargetingKeyGen):
         self.PltValueGetter = DFPValueIdGetter('pwtplt')
 
         self.pwtbst_value_id = self.BstValueGetter.get_value_id("1")
-        self.bidder_criteria = None
         self.price_els = None
 
         self.creative_type = None
         self.get_custom_targeting = []
-
-    def set_bidder_value(self, bidder_code):
-        print("Setting bidder value to {0}".format(bidder_code))
-
-        if bidder_code == None:
-            self.bidder_criteria = None
-            return
-
-        if isinstance(bidder_code, (list, tuple)):
-            # Multiple biders for us to OR to other
-            bidder_criteria = []
-            for bc in bidder_code:
-                value_id = self.BidderValueGetter.get_value_id(bc)
-                custom_criteria = {
-                    'xsi_type': 'CustomCriteria',
-                    'keyId': self.pwtpid_key_id,
-                    'valueIds': [value_id],
-                    'operator': 'IS'
-                }
-                bidder_criteria.append(custom_criteria)
-
-            self.bidder_criteria = {
-                'xsi_type': 'CustomCriteriaSet',
-                'logicalOperator': 'OR',
-                'children': bidder_criteria
-            }
-        else:
-            self.bidder_criteria  = {
-                'xsi_type': 'CustomCriteria',
-                'keyId': self.pwtpid_key_id,
-                'valueIds': [self.BidderValueGetter.get_value_id(bidder_code) ],
-                'operator': 'IS'
-            }
 
     def set_creative_type(self, ct):
         self.creative_type = ct
@@ -422,7 +388,7 @@ def setup_partner(user_email, advertiser_name, advertiser_type, order_name, plac
     placement_ids, bidder_code, sizes, OpenWrapTargetingKeyGen(),
     currency_code, custom_targeting, creative_type, same_adv_exception=same_adv_exception,ad_unit_ids=ad_unit_ids,
     device_category_ids=device_category_ids, roadblock_type=roadblock_type)
-    
+
   logger.info("Creating line items...")
   #pp = pprint.PrettyPrinter(indent=4)
   #pp.pprint(line_items_config)
@@ -583,7 +549,7 @@ def get_setting(settings_obj, setting_name, setting_default):
             return settings_obj[setting_name]
         else:
             return setting_default
-    
+
 def main():
   """
   Validate the settings and ask for confirmation from the user. Then,
@@ -594,22 +560,22 @@ def main():
   parser.add_argument('--yaml_file', help='Use .yaml config instead of settings.py')
   parser.add_argument('--generate_yaml', help='Output Config as a YAML file')
   args = parser.parse_args()
-    
+
   if args.yaml_file:
     from yaml import safe_load
     with open(args.yaml_file, 'r') as stream:
         settings = safe_load(stream)
   else:
     import settings
-    
+
   if args.generate_yaml:
     from yaml import dump
-    
+
     settings_dict = {}
-    for s in dir(settings): 
+    for s in dir(settings):
         if not s.startswith('__'):
             settings_dict[s] = getattr(settings, s, None)
-            
+
     with open(args.generate_yaml, 'w') as outfile:
         dump(settings_dict, outfile, default_flow_style=False)
         return
@@ -624,7 +590,7 @@ def main():
   advertiser_name = get_setting(settings, 'DFP_ADVERTISER_NAME', None)
   if advertiser_name is None:
     raise MissingSettingException('DFP_ADVERTISER_NAME')
-    
+
   advertiser_type = get_setting(settings, 'DFP_ADVERTISER_TYPE', "AD_NETWORK")
   if advertiser_type != "ADVERTISER" and advertiser_type != "AD_NETWORK":
     raise BadSettingException('DFP_ADVERTISER_TYPE')
