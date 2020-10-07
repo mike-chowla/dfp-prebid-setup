@@ -13,7 +13,7 @@ def create_line_items(line_items):
     an array: an array of created line item IDs
   """
   dfp_client = get_client()
-  line_item_service = dfp_client.GetService('LineItemService', version='v201908')
+  line_item_service = dfp_client.GetService('LineItemService', version='v202008')
   line_items = line_item_service.createLineItems(line_items)
 
   # Return IDs of created line items.
@@ -22,10 +22,9 @@ def create_line_items(line_items):
     created_line_item_ids.append(line_item['id'])
   return created_line_item_ids
 
-
 def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micro_amount, sizes, key_gen_obj,
                             currency_code='USD', same_adv_exception=False, device_categories=None,
-                            roadblock_type = 'ONE_OR_MORE'):
+                            roadblock_type = 'ONE_OR_MORE', video_ad_type=False):
   """
   Creates a line item config object.
 
@@ -41,6 +40,7 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
     hb_bidder_key_id (int): the DFP ID of the `hb_bidder` targeting key
     hb_pb_key_id (int): the DFP ID of the `hb_pb` targeting key
     currency_code (str): the currency code (e.g. 'USD' or 'EUR')
+    video_ad_type (bool): create video type line items
   Returns:
     an object: the line item config
   """
@@ -87,6 +87,11 @@ def create_line_item_config(name, order_id, placement_ids, ad_unit_ids, cpm_micr
           dev_cat_targeting.append({'id': str(dc)})
 
       line_item_config['targeting']['technologyTargeting'] = {'deviceCategoryTargeting': {'targetedDeviceCategories': dev_cat_targeting}}
+
+  if video_ad_type:
+      line_item_config['environmentType'] = 'VIDEO_PLAYER'
+      # https://developers.google.com/ad-manager/api/reference/v202005/LineItemService.RequestPlatformTargeting
+      line_item_config['targeting']['requestPlatformTargeting'] = { 'targetedRequestPlatforms': [ 'VIDEO_PLAYER' ] },
 
   if placement_ids is not None:
     line_item_config['targeting']['inventoryTargeting']['targetedPlacementIds'] = placement_ids

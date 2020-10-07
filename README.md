@@ -84,6 +84,8 @@ Setting | Description | Type
 `DFP_PLACEMENT_SIZES` | The creative sizes for the targeted placements | array of objects (e.g., `[{'width': '728', 'height': '90'}]`)
 `PREBID_BIDDER_CODE` | The value of [`hb_bidder`](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings) for this partner | string
 `PREBID_PRICE_BUCKETS` | The [price granularity](http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.setPriceGranularity); used to set `hb_pb` for each line item | object
+`DFP_VIDEO_AD_TYPE` | Set to true to create video ad units and creatives | boolean
+`DFP_VAST_REDIRECT_URL` | The redirect URL to use for video ad creatives (only used if `DFP_VIDEO_AD_TYPE` is set to True) | string
 
 Then, from the root of the repository, run:
 
@@ -143,4 +145,4 @@ Please consider [contributing](CONTRIBUTING.md) to make the tool more flexible.
 ## Contributors
 Thanks to these people for making this tool better 🤗:
 
-[@couhie](https://github.com/couhie), [@dlackty](https://github.com/dlackty), [@pbrisson](https://github.com/pbrisson), [@jsonUK](https://github.com/jsonUK)
+[@sebmil-daily](https://github.com/sebmil-daily), [@couhie](https://github.com/couhie), [@dlackty](https://github.com/dlackty), [@pbrisson](https://github.com/pbrisson), [@jsonUK](https://github.com/jsonUK)

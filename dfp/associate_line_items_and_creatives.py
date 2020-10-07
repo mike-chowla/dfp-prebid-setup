@@ -19,7 +19,7 @@ def make_licas(line_item_ids, creative_ids, size_overrides=[]):
   """
   dfp_client = get_client()
   lica_service = dfp_client.GetService(
-    'LineItemCreativeAssociationService', version='v201908')
+    'LineItemCreativeAssociationService', version='v202008')
 
   sizes = []
 
@@ -41,10 +41,14 @@ def make_licas(line_item_ids, creative_ids, size_overrides=[]):
         # settings, as recommended: http://prebid.org/adops/step-by-step.html
         'sizes': sizes
       })
-  licas = lica_service.createLineItemCreativeAssociations(licas)
 
-  if licas:
-    logger.info(
-      u'Created {0} line item <> creative associations.'.format(len(licas)))
-  else:
-    logger.info(u'No line item <> creative associations created.')
+  batchsize = 500
+  for i in range(0, len(licas), batchsize):
+    batch = licas[i:i+batchsize] # select a portion of licas array to process in batches
+    batch = lica_service.createLineItemCreativeAssociations(batch)
+
+    if batch:
+      current_total = i+batchsize if i+batchsize < len(licas) else len(licas)
+      logger.info('Created {0} line items of {1} <> for creative associations.'.format(current_total, len(licas)))
+    else:
+      logger.info('No line item <> creative associations created.')
